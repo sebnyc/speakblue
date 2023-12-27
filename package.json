@@ -1,0 +1,33 @@
+{
+  "dependencies": {
+    "@nosferatu500/textract-lite": "^5.0.0",
+    "@resemble/node": "^1.2.2",
+    "argon2": "^0.28.7",
+    "async": "^3.2.3",
+    "body-parser": "^1.20.0",
+    "chance": "^1.1.9",
+    "commander": "^9.4.0",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.0.0",
+    "electron": "^22.0.3",
+    "express": "^4.17.3",
+    "fs-extra": "^10.0.1",
+    "html-entities": "^2.3.3",
+    "jsonwebtoken": "^9.0.0",
+    "loudness": "^0.4.1",
+    "luxon": "^2.3.1",
+    "macos-audio-devices": "^1.4.0",
+    "mammoth": "^1.5.1",
+    "mongodb": "^4.8.0",
+    "nano": "^9.0.5",
+    "needle": "^3.1.0",
+    "nodemailer": "^6.7.8",
+    "object-hash": "^3.0.0",
+    "open": "^8.4.0",
+    "openai": "^3.1.0",
+    "serialport": "^10.5.0",
+    "socket.io": "^4.4.1",
+    "socket.io-client": "^4.5.3",
+    "uuid": "^8.3.2"
+  }
+}

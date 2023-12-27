@@ -1,0 +1,74 @@
+body {
+  padding: 5px;
+}
+
+.btn-secondary:disabled,
+.btn-light:disabled {
+  width: 11em;
+  max-width: 11em;
+}
+
+.badge.bg-primary.p {
+  border: 1px solid blue !important;
+  background-color: lightblue !important;
+  color: blue !important;
+}
+
+.badge.bg-primary.i {
+  border: 1px solid blue !important;
+  background-color: white !important;
+  color: blue !important;
+}
+
+.badge.bg-danger.p {
+  border: 1px solid red !important;
+  background-color: lightpink !important;
+  color: darkred !important;
+}
+
+.badge.bg-danger.i {
+  border: 1px solid red !important;
+  background-color: white !important;
+  color: darkred !important;
+}
+
+.badge.bg-success.p {
+  border: 1px solid green !important;
+  background-color: lightgreen !important;
+  color: green !important;
+}
+
+.badge.bg-success.i {
+  border: 1px solid green !important;
+  background-color: white !important;
+  color: green !important;
+}
+
+.badge.bg-warning.p {
+  border: 1px solid orange !important;
+  background-color: yellow !important;
+  color: darkorange !important;
+}
+
+.badge.bg-warning.i {
+  border: 1px solid orange !important;
+  background-color: white !important;
+  color: darkorange !important;
+}
+
+.badge.bg-info {
+  border: 1px solid cyan !important;
+  background-color: white !important;
+  color: darkcyan !important;
+}
+
+#overlay {
+  position: absolute;
+  top: 0;
+  height: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  padding-top: 20%;
+}

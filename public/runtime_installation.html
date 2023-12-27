@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>SpeakBlue — Installation</title>
+    <link rel="stylesheet" href="bootstrap.min.css" />
+    <link rel="stylesheet" href="bootstrap-icons.css" />
+    <link rel="stylesheet" href="runtime.css" />
+  </head>
+  <body>
+    <div class="container-fluid p-2 m-0">
+      <div class="row g-3">
+        <div class="col">
+        <button id="motion" class="btn btn-primary">Mouvement</button>
+      </div>
+      <div class="col">
+        <button id="chorale" class="btn btn-primary">Chorale</button>
+      </div>
+      <div class="col">
+        <button id="sensor" class="btn btn-success" disabled>Sensor ON</button>
+        <button id="sensor-ignored" class="btn btn-warning mt-2" disabled>Sensor Ignored</button><br>
+        <button id="someone" class="btn btn-secondary mt-2" disabled>Absence</button>
+      </div>
+      <div class="col">
+        <button id="status" class="btn btn-info" disabled>LAUNCHING</button><br>
+        <button id="timeout" class="btn btn-secondary mt-2" disabled>...</button><br>
+        <button id="sincelast" class="btn btn-secondary mt-2" disabled>...</button>
+      </div>
+      <div class="col">
+        <div class="input-group mb-3">
+          <span class="input-group-text">Whisper volume</span>
+          <input type="text" class="form-control" id="whisperVolume" value="">
+        </div>
+      </div>
+    </div>
+  </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="howler.js"></script>
+    <script src="chance.js"></script>
+    <script src="jquery-3.6.0.js"></script>
+    <script src="bootstrap.bundle.min.js"></script>
+    <script src="runtime_installation.js"></script>
+  </body>
+</html>
