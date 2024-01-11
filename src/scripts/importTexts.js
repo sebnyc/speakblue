@@ -3,7 +3,7 @@ const { Database } = require('../modules/database');
 const path = require('path');
 const fs = require('fs');
 const mammoth = require('mammoth');
-const srcTextPath = path.resolve(path.join(__dirname, '..', '..', 'sources_txt', 'global'));
+const srcTextPath = path.resolve(path.join(__dirname, '..', '..', 'sources_txt', '01_2024'));
 
 async function main() {
   await Database.createIndex('sentence', { destination: 1 });
@@ -14,9 +14,9 @@ async function main() {
   await Database.createIndex('sentence', { destination: 1, subject: 1, type: 1 });
   const files = browseDir(srcTextPath);
   files.sort();
-  files.forEach(async (file) => {
-    await parseFile(file);
-  });
+  for (let i = 0; i < files.length; i++) {
+    await parseFile(files[i]);
+  }
 }
 
 function browseDir(dir) {
@@ -103,8 +103,8 @@ async function parseFile(filePath) {
             if (tags.length > 0) {
               part = part.replace(/#([a-zè+-]+)/gim, '').trim();
             }
-            if (part) {
-              console.log(`text: ${baseId}_${index}`);
+            if (part && /formulaire/gim.test(part) === false) {
+              console.log(`text: ${filePath} / ${baseId}_${index}`);
               const existing = await Database.findOne('sentence', { _id: `${baseId}_${index}` });
               if (existing === null) {
                 await Database.insertOne('sentence', {
@@ -185,6 +185,8 @@ async function parseFile(filePath) {
                   console.log('skipped');
                 }
               }
+            } else {
+              console.log('skipped');
             }
           }
         } else if (/<th>/gim.test(html) === true) {
@@ -203,7 +205,7 @@ async function parseFile(filePath) {
             part = part.replace(/«\s?/gim, '"');
             part = part.replace(/\s?»/gim, '"');
             part = part.replace(/  +/gm, ' ').trim();
-            if (part) {
+            if (part && /formulaire/gim.test(part) === false) {
               if (/source\s?:/gim.test(part) === true) {
                 part = part.split(/source\s?:/gim);
                 if (part[0].trim() === '') {
@@ -262,6 +264,8 @@ async function parseFile(filePath) {
                   return self.indexOf(value) === index;
                 });
               console.log(`text: ${baseId}_${index}`);
+            } else {
+              console.log('skipped');
             }
           }
         } else {
@@ -322,7 +326,7 @@ async function parseFile(filePath) {
           }
           for (let index = 0; index < parts.length; index++) {
             let part = parts[index];
-            if (part && part !== '.') {
+            if (part && part !== '.' && /formulaire/gim.test(part) === false) {
               console.log(`text: ${baseId}_${index}`);
               const existing = await Database.findOne('sentence', { _id: `${baseId}_${index}` });
               if (existing === null) {
@@ -346,11 +350,14 @@ async function parseFile(filePath) {
               } else {
                 console.log('existing');
               }
+            } else {
+              console.log('skipped');
             }
           }
         }
       })
       .done(() => {
+        console.log('done');
         return true;
       });
   } catch (err) {

@@ -3,7 +3,7 @@ const { Database } = require('../modules/database');
 const path = require('path');
 const fs = require('fs');
 const mammoth = require('mammoth');
-const srcTextPath = path.resolve(path.join(__dirname, '..', '..', 'sources_txt', 'global'));
+const srcTextPath = path.resolve(path.join(__dirname, '..', '..', 'sources_txt', '01_2024'));
 
 async function main() {
   await Database.createIndex('sentence', { destination: 1 });
@@ -373,94 +373,99 @@ async function parseFile(filePath) {
             if (tags.length > 0) {
               parts[index].text = parts[index].text.replace(/#([a-zè+-]+)/gim, '').trim();
             }
-            console.log(parts[index].text);
-            const existing = await Database.findOne('sentence', { _id: `${baseId}_${index}` });
-            if (existing === null) {
-              await Database.insertOne('sentence', {
-                _id: `${baseId}_${index}`,
-                destination: parts[index].context.destination,
-                voice: [parts[index].context.voice],
-                subject: parts[index].context.subject,
-                type: parts[index].context.type,
-                pause: parts[index].context.pause,
-                text: parts[index].text,
-                tags: tags,
-                clipw: null,
-                clipn: null,
-                clipi: null,
-                clipe: null,
-                clipwtry: 0,
-                clipntry: 0,
-                clipitry: 0,
-                clipetry: 0,
-              });
-              console.log('added');
-            } else {
-              if (
-                JSON.stringify(existing.destination) !== JSON.stringify(parts[index].context.destination) ||
-                JSON.stringify(existing.voice) !== JSON.stringify([parts[index].context.voice]) ||
-                JSON.stringify(existing.subject) !== JSON.stringify(parts[index].context.subject) ||
-                JSON.stringify(existing.type) !== JSON.stringify(parts[index].context.type) ||
-                JSON.stringify(existing.text) !== JSON.stringify(parts[index].text) ||
-                JSON.stringify(existing.tags) !== JSON.stringify(tags)
-              ) {
-                if (JSON.stringify(existing.text) !== JSON.stringify(parts[index].text)) {
-                  await Database.replaceOne(
-                    'sentence',
-                    { _id: `${baseId}_${index}` },
-                    {
-                      _id: `${baseId}_${index}`,
-                      destination: parts[index].context.destination,
-                      voice: [parts[index].context.voice],
-                      subject: parts[index].context.subject,
-                      type: parts[index].context.type,
-                      pause: parts[index].context.pause,
-                      text: parts[index].text,
-                      tags: tags,
-                      clipw: null,
-                      clipn: null,
-                      clipi: null,
-                      clipe: null,
-                      clipwtry: 0,
-                      clipntry: 0,
-                      clipitry: 0,
-                      clipetry: 0,
-                    },
-                  );
-                  console.log('updated (reset clips)');
-                } else {
-                  await Database.replaceOne(
-                    'sentence',
-                    { _id: `${baseId}_${index}` },
-                    {
-                      _id: `${baseId}_${index}`,
-                      destination: parts[index].context.destination,
-                      voice: [parts[index].context.voice],
-                      subject: parts[index].context.subject,
-                      type: parts[index].context.type,
-                      pause: parts[index].context.pause,
-                      text: parts[index].text,
-                      tags: tags,
-                      clipw: existing.clipw,
-                      clipn: existing.clipn,
-                      clipi: existing.clipe,
-                      clipe: existing.clipe,
-                      clipwtry: existing.clipwtry,
-                      clipntry: existing.clipntry,
-                      clipitry: existing.clipitry,
-                      clipetry: existing.clipetry,
-                    },
-                  );
-                  console.log('updated (keep clips)');
-                }
+            if (parts[index].text && /formulaire/gim.test(parts[index].text) === false) {
+              console.log(parts[index].text);
+              const existing = await Database.findOne('sentence', { _id: `${baseId}_${index}` });
+              if (existing === null) {
+                await Database.insertOne('sentence', {
+                  _id: `${baseId}_${index}`,
+                  destination: parts[index].context.destination,
+                  voice: [parts[index].context.voice],
+                  subject: parts[index].context.subject,
+                  type: parts[index].context.type,
+                  pause: parts[index].context.pause,
+                  text: parts[index].text,
+                  tags: tags,
+                  clipw: null,
+                  clipn: null,
+                  clipi: null,
+                  clipe: null,
+                  clipwtry: 0,
+                  clipntry: 0,
+                  clipitry: 0,
+                  clipetry: 0,
+                });
+                console.log('added');
               } else {
-                console.log('skipped');
+                if (
+                  JSON.stringify(existing.destination) !== JSON.stringify(parts[index].context.destination) ||
+                  JSON.stringify(existing.voice) !== JSON.stringify([parts[index].context.voice]) ||
+                  JSON.stringify(existing.subject) !== JSON.stringify(parts[index].context.subject) ||
+                  JSON.stringify(existing.type) !== JSON.stringify(parts[index].context.type) ||
+                  JSON.stringify(existing.text) !== JSON.stringify(parts[index].text) ||
+                  JSON.stringify(existing.tags) !== JSON.stringify(tags)
+                ) {
+                  if (JSON.stringify(existing.text) !== JSON.stringify(parts[index].text)) {
+                    await Database.replaceOne(
+                      'sentence',
+                      { _id: `${baseId}_${index}` },
+                      {
+                        _id: `${baseId}_${index}`,
+                        destination: parts[index].context.destination,
+                        voice: [parts[index].context.voice],
+                        subject: parts[index].context.subject,
+                        type: parts[index].context.type,
+                        pause: parts[index].context.pause,
+                        text: parts[index].text,
+                        tags: tags,
+                        clipw: null,
+                        clipn: null,
+                        clipi: null,
+                        clipe: null,
+                        clipwtry: 0,
+                        clipntry: 0,
+                        clipitry: 0,
+                        clipetry: 0,
+                      },
+                    );
+                    console.log('updated (reset clips)');
+                  } else {
+                    await Database.replaceOne(
+                      'sentence',
+                      { _id: `${baseId}_${index}` },
+                      {
+                        _id: `${baseId}_${index}`,
+                        destination: parts[index].context.destination,
+                        voice: [parts[index].context.voice],
+                        subject: parts[index].context.subject,
+                        type: parts[index].context.type,
+                        pause: parts[index].context.pause,
+                        text: parts[index].text,
+                        tags: tags,
+                        clipw: existing.clipw,
+                        clipn: existing.clipn,
+                        clipi: existing.clipe,
+                        clipe: existing.clipe,
+                        clipwtry: existing.clipwtry,
+                        clipntry: existing.clipntry,
+                        clipitry: existing.clipitry,
+                        clipetry: existing.clipetry,
+                      },
+                    );
+                    console.log('updated (keep clips)');
+                  }
+                } else {
+                  console.log('skipped');
+                }
               }
+            } else {
+              console.log('skipped');
             }
           }
         }
       })
       .done(() => {
+        console.log('done');
         return true;
       });
   } catch (err) {
