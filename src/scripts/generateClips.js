@@ -50,12 +50,12 @@ async function main() {
 async function generate() {
   if (
     sentences[index][`clip${sentences[index].voice[voiceIndex]}`] === null &&
-    sentences[index][`clip${sentences[index].voice[voiceIndex]}try`] < 20 &&
+    sentences[index][`clip${sentences[index].voice[voiceIndex]}try`] < 1000 &&
     !sentences[index].partition &&
     sentences[index].text
   ) {
     console.log(`generate ${sentences[index]._id} / ${voiceIndex}...`);
-    failedTimeout = setTimeout(failure, 10 * 60 * 1000);
+    failedTimeout = setTimeout(failure, 5 * 60 * 1000);
     sentences[index][`clip${sentences[index].voice[voiceIndex]}try`]++;
     await Database.replaceOne('sentence', { _id: sentences[index]._id }, sentences[index]);
     const done = await Runtime.generate(sentences[index], voiceIndex);
