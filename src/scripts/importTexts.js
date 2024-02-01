@@ -3,7 +3,7 @@ const { Database } = require('../modules/database');
 const path = require('path');
 const fs = require('fs');
 const mammoth = require('mammoth');
-const srcTextPath = path.resolve(path.join(__dirname, '..', '..', 'sources_txt', '01_2024'));
+const srcTextPath = path.resolve(path.join(__dirname, '..', '..', 'sources_txt', 'test1'));
 
 async function main() {
   await Database.createIndex('sentence', { destination: 1 });
@@ -84,6 +84,8 @@ async function parseFile(filePath) {
           })
           .join('_')}_${voice.join('')}`;
         const html = result.value;
+        console.log("HTML");
+        console.log(html);
         if (/<li>/gim.test(html) === true) {
           const liParts = html.split(/<li>/gim);
           for (let index = 0; index < liParts.length; index++) {
@@ -104,7 +106,7 @@ async function parseFile(filePath) {
               part = part.replace(/#([a-zè+-]+)/gim, '').trim();
             }
             if (part && /formulaire/gim.test(part) === false) {
-              console.log(`text: ${filePath} / ${baseId}_${index}`);
+              console.log(`text (LI): ${filePath} / ${baseId}_${index}`);
               const existing = await Database.findOne('sentence', { _id: `${baseId}_${index}` });
               if (existing === null) {
                 await Database.insertOne('sentence', {
@@ -263,7 +265,7 @@ async function parseFile(filePath) {
                 .filter((value, index, self) => {
                   return self.indexOf(value) === index;
                 });
-              console.log(`text: ${baseId}_${index}`);
+              console.log(`text (TH): ${baseId}_${index}`);
             } else {
               console.log('skipped');
             }
@@ -327,7 +329,7 @@ async function parseFile(filePath) {
           for (let index = 0; index < parts.length; index++) {
             let part = parts[index];
             if (part && part !== '.' && /formulaire/gim.test(part) === false) {
-              console.log(`text: ${baseId}_${index}`);
+              console.log(`text (P): ${baseId}_${index}`);
               const existing = await Database.findOne('sentence', { _id: `${baseId}_${index}` });
               if (existing === null) {
                 await Database.insertOne('sentence', {
