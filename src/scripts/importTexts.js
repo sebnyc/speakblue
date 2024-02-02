@@ -125,6 +125,7 @@ async function parseFile(filePath) {
                   clipntry: 0,
                   clipitry: 0,
                   clipetry: 0,
+                  createdAt: new Date(),
                 });
                 console.log('added');
               } else {
@@ -347,6 +348,7 @@ async function parseFile(filePath) {
                   clipntry: 0,
                   clipitry: 0,
                   clipetry: 0,
+                  createdAt: new Date(),
                 });
                 console.log('stored');
               } else {
