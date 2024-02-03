@@ -106,3 +106,5 @@ dist
 *.wav
 
 .idea/
+
+public/runtime/*

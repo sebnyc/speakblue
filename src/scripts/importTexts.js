@@ -3,20 +3,29 @@ const { Database } = require('../modules/database');
 const path = require('path');
 const fs = require('fs');
 const mammoth = require('mammoth');
-const srcTextPath = path.resolve(path.join(__dirname, '..', '..', 'sources_txt', 'test1'));
 
 async function main() {
+  const dirToImport = process.argv[2];
+  if (!dirToImport) {
+    console.log(`Usage: node ${process.argv[1]} <directory to import>`);
+    process.exit(1);
+  }
+
   await Database.createIndex('sentence', { destination: 1 });
   await Database.createIndex('sentence', { voice: 1 });
   await Database.createIndex('sentence', { subject: 1 });
   await Database.createIndex('sentence', { type: 1 });
   await Database.createIndex('sentence', { destination: 1, subject: 1 });
   await Database.createIndex('sentence', { destination: 1, subject: 1, type: 1 });
+  const srcTextPath = path.resolve(path.join(__dirname, '..', '..', 'sources_txt', dirToImport));
   const files = browseDir(srcTextPath);
   files.sort();
+  console.log(`Found ${files.length} files`);
   for (let i = 0; i < files.length; i++) {
     await parseFile(files[i]);
   }
+  console.log("Finished all files");
+  process.exit(0);
 }
 
 function browseDir(dir) {
@@ -46,7 +55,7 @@ function browseDir(dir) {
 
 async function parseFile(filePath) {
   try {
-    mammoth
+    await mammoth
       .convertToHtml({ path: filePath })
       .then(async (result) => {
         const fileName = path.basename(filePath, '.docx');
@@ -84,8 +93,6 @@ async function parseFile(filePath) {
           })
           .join('_')}_${voice.join('')}`;
         const html = result.value;
-        console.log("HTML");
-        console.log(html);
         if (/<li>/gim.test(html) === true) {
           const liParts = html.split(/<li>/gim);
           for (let index = 0; index < liParts.length; index++) {
@@ -106,7 +113,8 @@ async function parseFile(filePath) {
               part = part.replace(/#([a-zè+-]+)/gim, '').trim();
             }
             if (part && /formulaire/gim.test(part) === false) {
-              console.log(`text (LI): ${filePath} / ${baseId}_${index}`);
+              console.log(`Considering text (LI): ${filePath} / ${baseId}_${index}`);
+              console.log(part);
               const existing = await Database.findOne('sentence', { _id: `${baseId}_${index}` });
               if (existing === null) {
                 await Database.insertOne('sentence', {
@@ -360,7 +368,7 @@ async function parseFile(filePath) {
           }
         }
       })
-      .done(() => {
+      .then(() => {
         console.log('done');
         return true;
       });

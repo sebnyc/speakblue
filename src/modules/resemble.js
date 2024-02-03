@@ -1,8 +1,12 @@
 require('./env');
 
+const { Resemble: importResemble } = require('@resemble/node') ;
+
+importResemble.setApiKey(process.env.RESEMBLE_API_TOKEN);
+
 class Resemble {
   constructor() {
-    this.api = new (require('@resemble/node'))(process.env.RESEMBLE_API_VERSION, process.env.RESEMBLE_API_TOKEN);
+    this.api = importResemble.v2;
   }
 
   getVoiceByEmotion(emotion) {
@@ -137,6 +141,16 @@ class Resemble {
       is_public: false,
       is_archived: false,
       callback_uri: `http://${process.env.HTTP_BASE_URI}:${process.env.HTTP_PORT}/listen`,
+    });
+  }
+
+  async createClipSync(uuid, voice_uuid, text) {
+    return await this.api.clips.createSync(process.env.RESEMBLE_PROJECT_UUID, {
+      title: uuid,
+      body: text,
+      voice_uuid: voice_uuid,
+      is_public: false,
+      is_archived: false,
     });
   }
 

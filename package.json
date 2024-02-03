@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "@nosferatu500/textract-lite": "^5.0.0",
-    "@resemble/node": "^1.2.2",
+    "@resemble/node": "^3.3.2",
     "argon2": "^0.28.7",
     "async": "^3.2.3",
     "body-parser": "^1.20.0",
