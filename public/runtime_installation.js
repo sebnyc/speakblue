@@ -93,6 +93,8 @@ addEventListener('error', (e) => {
   }
 });
 
+// Continuously plays an almost inaudible "brown noise" in order to prevent
+// the Bluetooth speaker to turn itself off automatically after a while:
 function brownNoise() {
   new Howl({
     src: [`/brownNoise.mp3`],
