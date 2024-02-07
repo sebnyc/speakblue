@@ -20,7 +20,7 @@ const createWindow = () => {
     },
   });
 
-  win.loadURL('http://localhost:3200/runtime_installation.html');
+  win.loadURL('http://localhost:3200/runtime_dispositif.html');
   win.webContents.openDevTools();
 };
 

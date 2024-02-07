@@ -105,12 +105,11 @@ class Runtime {
       //     rate: rate,
       //   },
       // });
-      this.currentTextId = `${sentence._id}_${voiceIndex}`;
+      this.currentTextId = `${sentence._id}_${sentence.voice[voiceIndex]}`;
       await this.callResemble(
-          `${sentence._id}_${voiceIndex}`,
+          this.currentTextId,
           text,
           {
-            name: `${sentence._id}_${voiceIndex}`,
             voice: voice,
             pitch: 3,
             volume: 3,
@@ -126,7 +125,7 @@ class Runtime {
 
   async callResemble(id, text, params) {
     const xml = [];
-    const clipId = uuidv4();
+    // const clipId = uuidv4();
     const voiceId = Resemble.getVoiceByEmotion(params.voice);
     const pitch = Resemble.getPitchByNumericValue(parseInt(params.pitch, 10));
     const volume = Resemble.getVolumeByNumericValue(parseInt(params.volume, 10));
@@ -176,7 +175,7 @@ class Runtime {
 
     const xmlText = xml.join('');
 
-    const response = await Resemble.createClipSync(clipId, voiceId, xmlText);
+    const response = await Resemble.createClipSync(id, voiceId, xmlText);
     if (!response.success) {
       console.log("Resemble API error");
       console.log(response);
@@ -187,7 +186,7 @@ class Runtime {
     }
 
     const clipUrl = response.item.audio_src;
-    const output = path.join(__dirname, '..', '..', 'public', 'runtime', `${clipId}`);
+    const output = path.join(__dirname, '..', '..', 'public', 'runtime', `${id}.mp3`);
     needle.get(clipUrl, { follow_max: 10, output: output }, async (err) => {
       if (err) {
         console.error(err);

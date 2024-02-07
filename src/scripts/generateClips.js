@@ -1,6 +1,7 @@
 require('../modules/env');
 const { Database } = require('../modules/database');
 const { Runtime } = require('../modules/runtime');
+const path = require("path");
 let index = 0;
 let voiceIndex = 0;
 let sentences = [];
@@ -23,7 +24,7 @@ function failure() {
 }
 
 async function save(ind, voiceInd, filepath) {
-  sentences[ind][`clip${sentences[ind].voice[voiceInd]}`] = filepath;
+  sentences[ind][`clip${sentences[ind].voice[voiceInd]}`] = path.basename(filepath);
   await Database.replaceOne('sentence', { _id: sentences[ind]._id }, sentences[ind]);
   doNext();
 }

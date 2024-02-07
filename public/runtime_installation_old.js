@@ -1,4 +1,5 @@
 const settings = {};
+// Data for sounds to be played
 const sounds = [];
 const soundsNext = [];
 const soundsDelay = [];
@@ -6,9 +7,7 @@ const soundsFading = [];
 const runtimeFrequency = 50;
 const history = [];
 const partition = [];
-const voices = ['n', 'w', 'e', 'i'];
 const subjects = ['ai', 'capital', 'decolonial', 'ecologie', 'identite', 'politique'];
-const subjectsSB = ['adresse', 'ai', 'decolonial', 'ecologie', 'identite'];
 const types = ['attack', 'resist', 'transition'];
 const miscInterior = [
   'bloc',
@@ -23,29 +22,6 @@ const miscInterior = [
   'sujet',
   'unevoix',
 ];
-const miscPublic = [
-  'adresse',
-  'bloc',
-  'commentaires',
-  'djeune',
-  'liaisondebut',
-  'meteo',
-  'soufflecourt',
-  'soufflelong',
-  'transition',
-  'unevoix',
-];
-const tags = ['optimist', 'pessimist', 'complice+', 'complice-', 'empatic', 'colere'];
-const score = {
-  attack: 0,
-  resist: 0,
-  optimist: 0,
-  pessimist: 0,
-  'complice+': 0,
-  'complice-': 0,
-  empatic: 0,
-  colere: 0,
-};
 
 let i_partitions = [];
 let p_partitions = [];
@@ -71,15 +47,11 @@ let currentDestination = null;
 let currentVoice = null;
 let currentSubject = null;
 let currentType = null;
-let currentTag = null;
 let ignoreSensor = true;
 let backToInterior = false;
 let goToPublic = false;
 let gotNext = false;
 let lastPlayedSound = null;
-let choraleCount = 0;
-let playingChorale = false;
-let launchingChorale = false;
 let countdownToSilence = -1;
 let picking = false;
 let backToInteriorTimer = null;
@@ -127,14 +99,10 @@ function reset() {
   currentVoice = null;
   currentSubject = null;
   currentType = null;
-  currentTag = null;
   backToInterior = false;
   goToPublic = false;
   gotNext = false;
   lastPlayedSound = null;
-  choraleCount = 0;
-  playingChorale = false;
-  launchingChorale = false;
   inSilence = false;
   inPartitionCount = 0;
   isPartitionRespire = false;
@@ -181,6 +149,7 @@ function start() {
   chance.shuffle(interior_parts);
   let choice = chance.pickone(interior_parts);
   if (choice === 'respire') {
+    console.log("CHOICE = respire");
     chance.shuffle(i_partitions);
     let n = chance.integer({ min: 1, max: 4 });
     for (let i = 0; i < i_partitions.length; i++) {
@@ -195,12 +164,14 @@ function start() {
       }
     }
   } else if (choice === 'random_partition') {
+    console.log("CHOICE = random_partition");
     chance.shuffle(i_partitions);
     query = {
       sb: chance.pickone(i_partitions),
     };
     queries.push(query);
   } else if (choice === 'partition') {
+    console.log("CHOICE = partition");
     chance.shuffle(i_partitions);
     for (let i = 0; i < i_partitions.length; i++) {
       if (/respire/i.test(i_partitions[i]) === false) {
@@ -212,6 +183,7 @@ function start() {
       }
     }
   } else {
+    console.log("CHOICE = random");
     count = chance.integer({ min: 5, max: 30 });
     if (currentDestination === null) {
       query.destination = 'i';
@@ -255,18 +227,21 @@ function getNext(change) {
         let choice = chance.pickone(public_parts);
         console.log(`getNext(p): pick ${choice}`);
         if (choice === 'random_partition') {
+          console.log("Public choice = random_partition");
           chance.shuffle(p_partitions);
           query = {
             sb: chance.pickone(p_partitions),
           };
           queries.push(query);
         } else if (choice === 'partition') {
+          console.log("Public choice = partition");
           chance.shuffle(p_partitions);
           query = {
             sb: chance.pickone(p_partitions),
           };
           queries.push(query);
         } else {
+          console.log("Public choice = random");
           chance.shuffle(subjects);
           count = chance.integer({ min: 5, max: 30 });
           query.destination = 'p';
@@ -323,14 +298,14 @@ function getNext(change) {
   }
 }
 
-function pick(query, quantity, random, forChorale) {
+function pick(query, quantity, random) {
   if (picking === true) {
     console.log('Skip pick (picking in progress)');
     return;
   }
   picking = true;
-  console.log('Pick', JSON.stringify(query), quantity, random, forChorale);
-  $.post('/pick', { query: query, quantity: quantity, random: random, history: forChorale ? [] : history })
+  console.log('Pick', JSON.stringify(query), quantity, random);
+  $.post('/pick', { query: query, quantity: quantity, random: random, history: history })
     .done(function (res) {
       if (res.done && res.sentences && res.sentences.length > 0) {
         for (let i = 0; i < res.sentences.length; i++) {
@@ -342,7 +317,7 @@ function pick(query, quantity, random, forChorale) {
             } else {
               isPartitionRespire = false;
             }
-            if (res.sentences[i]._id !== 'silence' && !forChorale) {
+            if (res.sentences[i]._id !== 'silence') {
               history.push(res.sentences[i]._id);
               while (history.length > 255) {
                 history.shift();
@@ -355,14 +330,13 @@ function pick(query, quantity, random, forChorale) {
                 max: settings.maxNextDelay * 2,
               }) / 2,
               res.sentences[i].voice.indexOf('w') !== -1,
-              forChorale,
             );
           } else if (res.sentences[i].pause) {
             loadSound(`_${res.sentences[i].pause}`, 0);
           }
         }
         picking = false;
-      } else if (!forChorale) {
+      } else {
         console.log('Got nothing, restart...');
         restart(0);
       }
@@ -480,16 +454,12 @@ function motionEnd() {
   }
 }
 
-function chorale() {
-  pick([{ chorale: true }], chance.integer({ min: settings.minChorale, max: settings.maxChorale }), true, true);
-}
-
 $(document).ready(() => {
   $('#status').text('INIT');
 
+  // Refresh #sincelast and #timeout every second
   setInterval(() => {
     const now = new Date();
-
     if (lastPlayedSound !== null) {
       $('#sincelast').text(
         `Sec. since last sound: ${((now.getTime() - lastPlayedSound.getTime()) / 1000).toFixed(0)}/${
@@ -499,7 +469,6 @@ $(document).ready(() => {
     } else {
       $('#sincelast').text('...');
     }
-
     if (backToInteriorTimer !== null) {
       $('#timeout').text(`Interior in ${backToInteriorTimer}...`);
       backToInteriorTimer--;
@@ -513,6 +482,7 @@ $(document).ready(() => {
 
   brownNoise();
 
+  // Fetch settings
   $.post('/settings')
     .done(function (res) {
       console.clear();
@@ -530,6 +500,55 @@ $(document).ready(() => {
           }
           console.log(`Setting: ${key}: ${settings[key]}.`);
         }
+
+        socket = io();
+        $('#whisperVolume').val(settings.whisperVolume);
+        $('#whisperVolume').on('change', () => {
+          let newVal = parseFloat($('#whisperVolume').val());
+          if (isNaN(newVal)) {
+            $('#whisperVolume').val(settings.whisperVolume);
+          } else {
+            settings.whisperVolume = newVal;
+            $.post('/settings', {
+              newSettings: settings,
+            })
+                .done(function () {})
+                .fail(function (e) {
+                  console.error(e);
+                });
+          }
+        });
+        $('#motion').on('click', () => {
+          motionStart(true);
+        });
+        socket.on('motion-start', () => {
+          $('#sensor').removeClass('btn-danger').addClass('btn-success');
+          $('#sensor').text('Sensor ON');
+          motionStart(false);
+        });
+        socket.on('motion-end', () => {
+          $('#sensor').removeClass('btn-danger').addClass('btn-success');
+          $('#sensor').text('Sensor ON');
+          motionEnd();
+        });
+        socket.on('no-sensor', () => {
+          $('#sensor').removeClass('btn-success').addClass('btn-danger');
+          $('#sensor').text('Sensor OFF');
+        });
+        setTimeout(() => {
+          $('#sensor-ignored').removeClass('btn-warning').addClass('btn-info').text('Sensor Active');
+          ignoreSensor = false;
+        }, settings.ignoreSensorDelay * 1000);
+        $('#status').text('WAITING');
+
+        // START
+        setTimeout(() => {
+          restart(0);
+        }, settings.startDelay * 1000);
+
+
+
+
         $.post('/parts')
           .done(function (res) {
             if (res.done && res.parts && res.parts.iparts && res.parts.pparts) {
@@ -539,51 +558,7 @@ $(document).ready(() => {
               for (let pp = 0; pp < res.parts.pparts.length; pp++) {
                 p_partitions.push(res.parts.pparts[pp]);
               }
-              socket = io();
-              $('#whisperVolume').val(settings.whisperVolume);
-              $('#whisperVolume').on('change', () => {
-                let newVal = parseFloat($('#whisperVolume').val());
-                if (isNaN(newVal)) {
-                  $('#whisperVolume').val(settings.whisperVolume);
-                } else {
-                  settings.whisperVolume = newVal;
-                  $.post('/settings', {
-                    newSettings: settings,
-                  })
-                    .done(function () {})
-                    .fail(function (e) {
-                      console.error(e);
-                    });
-                }
-              });
-              $('#motion').on('click', () => {
-                motionStart(true);
-              });
-              $('#chorale').on('click', () => {
-                chorale();
-              });
-              socket.on('motion-start', () => {
-                $('#sensor').removeClass('btn-danger').addClass('btn-success');
-                $('#sensor').text('Sensor ON');
-                motionStart(false);
-              });
-              socket.on('motion-end', () => {
-                $('#sensor').removeClass('btn-danger').addClass('btn-success');
-                $('#sensor').text('Sensor ON');
-                motionEnd();
-              });
-              socket.on('no-sensor', () => {
-                $('#sensor').removeClass('btn-success').addClass('btn-danger');
-                $('#sensor').text('Sensor OFF');
-              });
-              setTimeout(() => {
-                $('#sensor-ignored').removeClass('btn-warning').addClass('btn-info').text('Sensor Active');
-                ignoreSensor = false;
-              }, settings.ignoreSensorDelay * 1000);
-              $('#status').text('WAITING');
-              setTimeout(() => {
-                restart(0);
-              }, settings.startDelay * 1000);
+
             } else {
               console.error('NO PARTS');
             }
@@ -591,6 +566,9 @@ $(document).ready(() => {
           .fail(function (e) {
             console.error(e);
           });
+
+
+
       } else {
         console.error('NO SETTINGS');
       }
@@ -600,17 +578,13 @@ $(document).ready(() => {
     });
 });
 
+// Control loop, executed every 50 ms
 function runtime() {
   const now = new Date();
   if (coolDown > 0) {
     coolDown--;
   } else {
     coolDown = 0;
-  }
-
-  if (playingChorale === true && choraleCount <= 0) {
-    restart(chance.integer({ min: 30, max: 3 * 60 }));
-    return;
   }
 
   if (lastPlayedSound !== null && now.getTime() - lastPlayedSound.getTime() > settings.maxSilence * 1000) {
@@ -642,8 +616,7 @@ function runtime() {
     typeof sounds[currentIndex] !== 'string' &&
     sounds[currentIndex].state() === 'loaded' &&
     sounds[currentIndex].playing() === false &&
-    coolDown === 0 &&
-    playingChorale === false
+    coolDown === 0
   ) {
     if (oldCurrentIndex !== currentIndex) {
       if (currentDestination === 'p' && backToInterior === true) {
@@ -703,70 +676,6 @@ function runtime() {
         }
         currentSubject = partition[currentIndex].subject;
         currentType = partition[currentIndex].type;
-        let scoreChanged = false;
-        if (currentType) {
-          score[currentType]++;
-          scoreChanged = true;
-        }
-        if (!Array.isArray(partition[currentIndex].tags)) {
-          currentTag = [partition[currentIndex].tags];
-        } else {
-          currentTag = partition[currentIndex].tags;
-        }
-        for (let t = 0; t < currentTag.length; t++) {
-          score[currentTag[t]]++;
-          scoreChanged = true;
-        }
-        if (scoreChanged) {
-          // console.log(JSON.stringify(score));
-        }
-        if (score['pessimist'] > 50 && launchingChorale === false) {
-          launchingChorale = true;
-          score.attack = 0;
-          score.resist = 0;
-          score.optimist = 0;
-          score.pessimist = 0;
-          score['complice+'] = 0;
-          score['complice-'] = 0;
-          score.empatic = 0;
-          score.colere = 0;
-          chorale();
-        }
-        inPartitionCount--;
-        lastPlayedSound = new Date();
-        sounds[currentIndex].play();
-        sounds[currentIndex].fade(0, currentVoice === 'w' ? settings.whisperVolume : 1, settings.fadingDuration * 1000);
-        oldCurrentIndex = currentIndex;
-      } else {
-        gotNext = false;
-        console.log('*** WARNING *** Empty partition slot for index', currentIndex);
-        $('#status').text(currentDestination === 'i' ? 'INTERIOR VOICE' : 'PUBLIC VOICE');
-        let scoreChanged = false;
-        if (currentType) {
-          score[currentType]++;
-          scoreChanged = true;
-        }
-        if (currentTag && Array.isArray(currentTag)) {
-          for (let t = 0; t < currentTag.length; t++) {
-            score[currentTag[t]]++;
-            scoreChanged = true;
-          }
-        }
-        if (scoreChanged) {
-          // console.log(JSON.stringify(score));
-        }
-        if (score['pessimist'] > 50 && launchingChorale === false) {
-          launchingChorale = true;
-          score.attack = 0;
-          score.resist = 0;
-          score.optimist = 0;
-          score.pessimist = 0;
-          score['complice+'] = 0;
-          score['complice-'] = 0;
-          score.empatic = 0;
-          score.colere = 0;
-          chorale();
-        }
         inPartitionCount--;
         lastPlayedSound = new Date();
         sounds[currentIndex].play();
@@ -788,83 +697,56 @@ function runtime() {
         soundsFading[i] = true;
         sounds[i].fade(currentVoice === 'w' ? settings.whisperVolume : 1, 0, settings.fadingDuration * 1000);
       }
-      if (playingChorale === false) {
-        if (sounds[i].seek() > 0 && gotNext === false && currentIndex + 1 === sounds.length) {
-          gotNext = true;
-          getNext();
-        }
-        if (soundsNext[i] === false && soundsDelay[currentIndex + 1] !== undefined) {
-          if (
+      if (sounds[i].seek() > 0 && gotNext === false && currentIndex + 1 === sounds.length) {
+        gotNext = true;
+        getNext();
+      }
+      if (soundsNext[i] === false && soundsDelay[currentIndex + 1] !== undefined) {
+        if (
             soundsDelay[currentIndex + 1] < 0 &&
             sounds[i].seek() >= sounds[i].duration() + soundsDelay[currentIndex + 1]
-          ) {
-            soundsNext[i] = true;
-            coolDown = 0;
-            currentIndex++;
-          }
-          if (
+        ) {
+          soundsNext[i] = true;
+          coolDown = 0;
+          currentIndex++;
+        }
+        if (
             soundsDelay[currentIndex + 1] >= 0 &&
             sounds[i].seek() >= sounds[i].duration() - runtimeFrequency / 1000
-          ) {
-            soundsNext[i] = true;
-            coolDown = soundsDelay[currentIndex + 1] * (1000 / runtimeFrequency);
-            currentIndex++;
-          }
+        ) {
+          soundsNext[i] = true;
+          coolDown = soundsDelay[currentIndex + 1] * (1000 / runtimeFrequency);
+          currentIndex++;
         }
       }
     }
   }
 }
 
-function loadSound(filename, delay, isWhisper, forChorale) {
-  // console.log('Load sound', filename, delay, isWhisper, forChorale);
-  if (forChorale) {
-    if (/^_\d+$/.test(filename) === false && filename !== 'pause') {
-      setTimeout(
-        () => {
-          playingChorale = true;
-          choraleCount++;
-          new Howl({
-            src: [`/runtime/${filename}`],
-            preload: true,
-            volume: isWhisper ? settings.whisperVolume : 1,
-            autoplay: true,
-            loop: false,
-            onend: function () {
-              choraleCount--;
-              this.unload();
-            },
-          });
-        },
-        chance.integer({
-          min: 0,
-          max: 5,
-        }) * 1000,
-      );
+function loadSound(filename, delay, isWhisper) {
+  // console.log('Load sound', filename, delay, isWhisper);
+  const _i = sounds.length;
+  soundsFading[_i] = false;
+  soundsNext[_i] = false;
+  soundsDelay[_i] = delay;
+  if (/^_\d+$/.test(filename) === false && filename !== 'pause') {
+    sounds[_i] = new Howl({
+      src: [`/runtime/${filename}`],
+      preload: true,
+      volume: isWhisper ? settings.whisperVolume : 1,
+      autoplay: false,
+      loop: false,
+      onend: () => {
+        if (sounds[_i] && typeof sounds[_i].unload === 'function') {
+          sounds[_i].unload();
+          sounds[_i] = null;
+        }
+      },
+    });
+  } else if (/^_\d+$/.test(filename) === true || filename === 'pause') {
+    if (filename === 'pause') {
+      filename = '_10';
     }
-  } else {
-    const _i = sounds.length;
-    soundsFading[_i] = false;
-    soundsNext[_i] = false;
-    soundsDelay[_i] = delay;
-    if (/^_\d+$/.test(filename) === false && filename !== 'pause') {
-      sounds[_i] = new Howl({
-        src: [`/runtime/${filename}`],
-        preload: true,
-        autoplay: false,
-        loop: false,
-        onend: () => {
-          if (sounds[_i] && typeof sounds[_i].unload === 'function') {
-            sounds[_i].unload();
-            sounds[_i] = null;
-          }
-        },
-      });
-    } else if (/^_\d+$/.test(filename) === true || filename === 'pause') {
-      if (filename === 'pause') {
-        filename = '_10';
-      }
-      sounds[_i] = filename;
-    }
+    sounds[_i] = filename;
   }
 }

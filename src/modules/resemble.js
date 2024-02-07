@@ -151,6 +151,7 @@ class Resemble {
       voice_uuid: voice_uuid,
       is_public: false,
       is_archived: false,
+      output_format: 'mp3',
     });
   }
 

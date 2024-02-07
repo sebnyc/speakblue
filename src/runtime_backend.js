@@ -25,7 +25,11 @@ app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb', parameterLimit: 100000 }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
+/**
+ * Get or set settings
+ */
 app.post('/settings', async (req, res) => {
+  console.log("SETTINGS");
   try {
     if (req.body.newSettings) {
       const newSettings = {};
@@ -54,20 +58,13 @@ app.post('/settings', async (req, res) => {
   }
 });
 
-app.post('/blocs', async (req, res) => {
-  try {
-    const blocs = await Database.find('sentence', {});
-    res.status(200).send({
-      done: true,
-      blocs: blocs,
-    });
-  } catch (e) {
-    console.error(e);
-    res.status(500).send(e);
-  }
-});
-
+/**
+ * Get all sentences starting with sb_ (minus the index number) in 2 lists :
+ * - iparts for those starting with sb_i or including "respire"
+ * - pparts for the others
+ */
 app.post('/parts', async (req, res) => {
+  console.log("PARTS");
   try {
     const blocs = await Database.find('sentence', { _id: /^sb_/i });
     const iparts = [];
@@ -82,6 +79,7 @@ app.post('/parts', async (req, res) => {
         pparts.push(name);
       }
     }
+
     res.status(200).send({
       done: true,
       parts: {
@@ -96,6 +94,8 @@ app.post('/parts', async (req, res) => {
 });
 
 app.post('/pick', async (req, res) => {
+  console.log("PICK");
+  console.log(req.body);
   try {
     let pushAdresse = false;
     let quantity = 1;
@@ -118,10 +118,6 @@ app.post('/pick', async (req, res) => {
       if (query.adresse) {
         pushAdresse = true;
         delete query.adresse;
-      }
-      if (query.chorale) {
-        query._id = /bloc/;
-        delete query.chorale;
       }
       let sortSb = false;
       if (query.sb) {
@@ -181,7 +177,6 @@ app.post('/pick', async (req, res) => {
             subject: sentences[i].subject,
             type: sentences[i].type,
             clips: [],
-            tags: query.tags || sentences[i].tags,
             pause: sentences[i].pause,
           };
           if (!finalSentence.subject) {
@@ -262,7 +257,6 @@ app.post('/pick', async (req, res) => {
                 subject: sentence.subject,
                 type: sentence.type,
                 clips: [],
-                tags: query.tags || sentence.tags,
                 pause: sentence.pause,
               };
               if (!finalSentence.subject) {
@@ -319,7 +313,6 @@ app.post('/pick', async (req, res) => {
           subject: sentence.subject,
           type: sentence.type,
           clips: [],
-          tags: query.tags || sentence.tags,
           pause: sentence.pause,
         };
         if (!finalSentence.subject) {
@@ -365,6 +358,7 @@ app.post('/pick', async (req, res) => {
         }
       }
     }
+    console.log(finalSentences.slice(0, 128));
     res.status(200).send({
       done: true,
       sentences: finalSentences.slice(0, 128),
@@ -375,129 +369,49 @@ app.post('/pick', async (req, res) => {
   }
 });
 
-app.post('/partition', async (req, res) => {
-  try {
-    const clips = [];
-    const partition = req.body.partition;
-    const history = req.body.history || [];
+const DEFAULT_SENTENCE = {
+  _id: 'test',
+  subject: 'defaultsubject',
+  type: 'defaulttype',
+  clip: "0a6f3168-b7fe-4da7-9d62-d3026017cfbe.wav"
+}
 
-    for (let i = 0; i < partition.length; i++) {
-      if (partition[i].destination === '*') {
-        clips.push({
-          _id: 'silence',
-          clip: '_',
-          text: 'silence',
-        });
-      } else if (partition[i].sb === true || partition[i].sb === 'true') {
-        const re = new RegExp(`^sb_${partition[i].subject}_`, 'i');
-        const sb = await Database.find('sentence', { _id: re });
-        sb.sort((a, b) => {
-          let id_a = a._id.split('_');
-          id_a = parseInt(id_a[id_a.length - 1]);
-          let id_b = b._id.split('_');
-          id_b = parseInt(id_b[id_b.length - 1]);
-          if (id_a < id_b) {
-            return -1;
-          }
-          if (id_a > id_b) {
-            return 1;
-          }
-          return 0;
-        });
-        for (let j = 0; j < sb.length; j++) {
-          history.push(sb[j]._id);
-          if (sb[j].pause !== null) {
-            clips.push({
-              _id: sb[j]._id,
-              clip: 'pause',
-              text: 'silence',
-            });
-          } else if (typeof sb[j].clipw === 'string') {
-            clips.push({
-              _id: sb[j]._id,
-              clip: path.basename(sb[j].clipw),
-              text: sb[j].text,
-            });
-          } else if (typeof sb[j].clipn === 'string') {
-            clips.push({
-              _id: sb[j]._id,
-              clip: path.basename(sb[j].clipn),
-              text: sb[j].text,
-            });
-          } else if (typeof sb[j].clipe === 'string') {
-            clips.push({
-              _id: sb[j]._id,
-              clip: path.basename(sb[j].clipe),
-              text: sb[j].text,
-            });
-          } else if (typeof sb[j].clipi === 'string') {
-            clips.push({
-              _id: sb[j]._id,
-              clip: path.basename(sb[j].clipi),
-              text: sb[j].text,
-            });
-          }
-        }
+app.post('/pick-one', async (req, res) => {
+  console.log("PICKONE");
+  console.log(req.body);
+  try {
+    let sentence = DEFAULT_SENTENCE;
+    const history = req.body.history || [];
+    const query = req.body.query || {voice: 'w'};
+    const sentences = await Database.find('sentence', query);
+    if (sentences.length === 0) {
+      console.log("Warning : no sentence found !!!");
+    } else {
+      sentence = chance.pickone(sentences);
+
+      if (typeof sentence[`clip${query.voice}`] === 'string') {
+        sentence.clip = path.basename(sentence[`clip${query.voice}`]);
       } else {
-        delete partition[i].sb;
-        let found = false;
-        if (partition[i].id !== undefined) {
-          let one = await Database.findOne('sentence', { _id: partition[i].id });
-          if (one !== null) {
-            if (typeof one[`clip${partition[i].voice}`] === 'string') {
-              found = true;
-              history.push(one._id);
-              clips.push({
-                _id: one._id,
-                clip: path.basename(one[`clip${partition[i].voice}`]),
-                text: one.text,
-              });
-            }
-          }
-        }
-        let candidates;
-        if (found === false) {
-          if (partition[i].id !== undefined) {
-            delete partition[i].id;
-          }
-          candidates = await Database.find('sentence', partition[i]);
-          candidates = candidates
-            .map((value) => ({ value, sort: Math.random() }))
-            .sort((a, b) => a.sort - b.sort)
-            .map(({ value }) => value);
-          for (let j = 0; j < candidates.length; j++) {
-            if (
-              found === false &&
-              history.indexOf(candidates[j]._id) === -1 &&
-              typeof candidates[j][`clip${partition[i].voice}`] === 'string'
-            ) {
-              found = true;
-              history.push(candidates[j]._id);
-              clips.push({
-                _id: candidates[j]._id,
-                clip: path.basename(candidates[j][`clip${partition[i].voice}`]),
-                text: candidates[j].text,
-              });
-              break;
-            }
-          }
-          if (found === false && candidates[0] && typeof candidates[0][`clip${partition[i].voice}`] === 'string') {
-            history.push(candidates[0]._id);
-            clips.push({
-              _id: candidates[0]._id,
-              clip: path.basename(candidates[0][`clip${partition[i].voice}`]),
-              text: candidates[0].text,
-            });
-          }
-        }
+        console.log("Warning: sentence doesn't have clip");
       }
     }
+
+    const response = {
+      _id: sentence._id,
+      destination: query.destination,
+      voice: query.voice,
+      subject: sentence.subject,
+      type: sentence.type,
+      clip: sentence.clip
+    }
+
     res.status(200).send({
       done: true,
-      clips: clips,
+      sentence: response,
     });
+
   } catch (e) {
-    console.error(e);
+    console.log(e);
     res.status(500).send(e);
   }
 });
@@ -568,3 +482,145 @@ async function main() {
 }
 
 main();
+
+// app.post('/blocs', async (req, res) => {
+//   try {
+//     const blocs = await Database.find('sentence', {});
+//     res.status(200).send({
+//       done: true,
+//       blocs: blocs,
+//     });
+//   } catch (e) {
+//     console.error(e);
+//     res.status(500).send(e);
+//   }
+// });
+
+// app.post('/partition', async (req, res) => {
+//   try {
+//     const clips = [];
+//     const partition = req.body.partition;
+//     const history = req.body.history || [];
+//
+//     for (let i = 0; i < partition.length; i++) {
+//       if (partition[i].destination === '*') {
+//         clips.push({
+//           _id: 'silence',
+//           clip: '_',
+//           text: 'silence',
+//         });
+//       } else if (partition[i].sb === true || partition[i].sb === 'true') {
+//         const re = new RegExp(`^sb_${partition[i].subject}_`, 'i');
+//         const sb = await Database.find('sentence', { _id: re });
+//         sb.sort((a, b) => {
+//           let id_a = a._id.split('_');
+//           id_a = parseInt(id_a[id_a.length - 1]);
+//           let id_b = b._id.split('_');
+//           id_b = parseInt(id_b[id_b.length - 1]);
+//           if (id_a < id_b) {
+//             return -1;
+//           }
+//           if (id_a > id_b) {
+//             return 1;
+//           }
+//           return 0;
+//         });
+//         for (let j = 0; j < sb.length; j++) {
+//           history.push(sb[j]._id);
+//           if (sb[j].pause !== null) {
+//             clips.push({
+//               _id: sb[j]._id,
+//               clip: 'pause',
+//               text: 'silence',
+//             });
+//           } else if (typeof sb[j].clipw === 'string') {
+//             clips.push({
+//               _id: sb[j]._id,
+//               clip: path.basename(sb[j].clipw),
+//               text: sb[j].text,
+//             });
+//           } else if (typeof sb[j].clipn === 'string') {
+//             clips.push({
+//               _id: sb[j]._id,
+//               clip: path.basename(sb[j].clipn),
+//               text: sb[j].text,
+//             });
+//           } else if (typeof sb[j].clipe === 'string') {
+//             clips.push({
+//               _id: sb[j]._id,
+//               clip: path.basename(sb[j].clipe),
+//               text: sb[j].text,
+//             });
+//           } else if (typeof sb[j].clipi === 'string') {
+//             clips.push({
+//               _id: sb[j]._id,
+//               clip: path.basename(sb[j].clipi),
+//               text: sb[j].text,
+//             });
+//           }
+//         }
+//       } else {
+//         delete partition[i].sb;
+//         let found = false;
+//         if (partition[i].id !== undefined) {
+//           let one = await Database.findOne('sentence', { _id: partition[i].id });
+//           if (one !== null) {
+//             if (typeof one[`clip${partition[i].voice}`] === 'string') {
+//               found = true;
+//               history.push(one._id);
+//               clips.push({
+//                 _id: one._id,
+//                 clip: path.basename(one[`clip${partition[i].voice}`]),
+//                 text: one.text,
+//               });
+//             }
+//           }
+//         }
+//         let candidates;
+//         if (found === false) {
+//           if (partition[i].id !== undefined) {
+//             delete partition[i].id;
+//           }
+//           candidates = await Database.find('sentence', partition[i]);
+//           candidates = candidates
+//             .map((value) => ({ value, sort: Math.random() }))
+//             .sort((a, b) => a.sort - b.sort)
+//             .map(({ value }) => value);
+//           for (let j = 0; j < candidates.length; j++) {
+//             if (
+//               found === false &&
+//               history.indexOf(candidates[j]._id) === -1 &&
+//               typeof candidates[j][`clip${partition[i].voice}`] === 'string'
+//             ) {
+//               found = true;
+//               history.push(candidates[j]._id);
+//               clips.push({
+//                 _id: candidates[j]._id,
+//                 clip: path.basename(candidates[j][`clip${partition[i].voice}`]),
+//                 text: candidates[j].text,
+//               });
+//               break;
+//             }
+//           }
+//           if (found === false && candidates[0] && typeof candidates[0][`clip${partition[i].voice}`] === 'string') {
+//             history.push(candidates[0]._id);
+//             clips.push({
+//               _id: candidates[0]._id,
+//               clip: path.basename(candidates[0][`clip${partition[i].voice}`]),
+//               text: candidates[0].text,
+//             });
+//           }
+//         }
+//       }
+//     }
+//     res.status(200).send({
+//       done: true,
+//       clips: clips,
+//     });
+//   } catch (e) {
+//     console.error(e);
+//     res.status(500).send(e);
+//   }
+// });
+
+
