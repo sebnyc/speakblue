@@ -159,9 +159,9 @@ class Runtime {
     ) {
       textToSpeak = ',,,,e,' + textToSpeak;
     }
-    if (/^,+!+,+!+,+/i.test(textToSpeak) === false && /^"!",+!+,+!+,+/i.test(textToSpeak) === false) {
-      textToSpeak = `,,,!,,,!,,,${textToSpeak}`;
-    }
+    // if (/^,+!+,+!+,+/i.test(textToSpeak) === false && /^"!",+!+,+!+,+/i.test(textToSpeak) === false) {
+    //   textToSpeak = `,,,!,,,!,,,${textToSpeak}`;
+    // }
 
     console.log(`[${textToSpeak}] ${params.voice} / rate ${params.rate}%`);
 

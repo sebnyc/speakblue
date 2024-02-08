@@ -24,7 +24,7 @@ function failure() {
 }
 
 async function save(ind, voiceInd, filepath) {
-  sentences[ind][`clip${sentences[ind].voice[voiceInd]}`] = path.basename(filepath);
+  sentences[ind][`clip${sentences[ind].voice[voiceInd]}`] = filepath;
   await Database.replaceOne('sentence', { _id: sentences[ind]._id }, sentences[ind]);
   doNext();
 }
