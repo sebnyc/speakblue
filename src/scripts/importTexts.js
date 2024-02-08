@@ -85,9 +85,10 @@ async function parseFile(filePath) {
         const terms = fileName.split('_');
         terms.pop();
         terms.shift();
-        const subject = terms[0];
-        const type = terms[1];
-        const baseId = `${destination.join('')}_${[subject, type]
+        const subject = terms[0].toLowerCase();
+        const type = terms[1].toLowerCase();
+        const fileIndex = terms.length > 2 ? terms[2] : null;
+        const baseId = `${destination.join('')}_${[subject, type, fileIndex]
           .filter((item) => {
             return !!item;
           })
@@ -165,6 +166,7 @@ async function parseFile(filePath) {
                         clipntry: 0,
                         clipitry: 0,
                         clipetry: 0,
+                        createdAt: new Date(),
                       },
                     );
                     console.log('updated (reset clips)');
@@ -188,6 +190,7 @@ async function parseFile(filePath) {
                         clipntry: existing.clipntry,
                         clipitry: existing.clipitry,
                         clipetry: existing.clipetry,
+                        createdAt: new Date(),
                       },
                     );
                     console.log('updated (keep clips)');
