@@ -44,9 +44,8 @@ addEventListener('error', (e) => {
 $(document).ready(() => {
   $('#status').text('INIT');
 
-  // Refresh #sincelast and #timeout every second
+  // Refresh #sincelast and #playlist every second
   setInterval(() => {
-    $('#timeout').text('...');
     const now = new Date();
     if (lastPlayedSound !== null) {
       $('#sincelast').text(
@@ -175,28 +174,68 @@ async function fetchNewSounds() {
 }
 
 const PUBLIC_SUBJECTS = ['identite', 'pythie', 'politique', 'ia', 'langue'];
+
+let remainingPublicSubjectsToChoose = [];
+
+function chooseRandomPublicSubject() {
+  // Reload list if necessary
+  if (remainingPublicSubjectsToChoose.length === 0)
+  remainingPublicSubjectsToChoose = PUBLIC_SUBJECTS;
+
+  const chosenValue = chance.pickone(remainingPublicSubjectsToChoose);
+  // Remove chosenValue from array
+  remainingPublicSubjectsToChoose.splice(remainingPublicSubjectsToChoose.indexOf(chosenValue), 1);
+  return chosenValue;
+}
+
 const PUBLIC_TYPES = ['lent', 'rapide', 'repetitif-lent', 'repetitif-rapide', 'begue', 'court', 'jesuis', 'mavoix'];
+const TYPE_LENT = 'lent';
+const TYPE_RAPIDE = 'rapide';
+const TYPE_REPETITIF_LENT = 'repetitif-lent';
+const TYPE_REPETITIF_RAPIDE = 'repetitif-rapide';
+const TYPE_BEGUE = 'begue';
+const TYPE_COURT = 'court';
+const TYPE_JE_SUIS = 'jesuis';
+const TYPE_MA_VOIX = 'mavoix';
+const TYPE_SILENCE = 'silence';
+
+const PUBLIC_PARTITIONS = [
+  [TYPE_RAPIDE, TYPE_LENT, TYPE_REPETITIF_RAPIDE, TYPE_REPETITIF_LENT, TYPE_BEGUE, TYPE_COURT, TYPE_JE_SUIS, TYPE_MA_VOIX],
+  [TYPE_RAPIDE, TYPE_REPETITIF_RAPIDE, TYPE_COURT, TYPE_JE_SUIS, TYPE_MA_VOIX],
+  [TYPE_MA_VOIX, TYPE_REPETITIF_LENT, TYPE_BEGUE, TYPE_COURT, TYPE_JE_SUIS],
+  [TYPE_RAPIDE, TYPE_LENT, TYPE_REPETITIF_RAPIDE, TYPE_REPETITIF_LENT, TYPE_BEGUE, TYPE_COURT, TYPE_JE_SUIS, TYPE_MA_VOIX, TYPE_REPETITIF_RAPIDE, TYPE_REPETITIF_LENT],
+]
+let remainingPublicPartitionsToChoose = [];
+
+function chooseRandomPublicPartition() {
+  // Reload list if necessary
+  if (remainingPublicPartitionsToChoose.length === 0)
+    remainingPublicPartitionsToChoose = PUBLIC_PARTITIONS;
+
+  const chosenValue = chance.pickone(remainingPublicPartitionsToChoose);
+  // Remove chosenValue from array
+  remainingPublicPartitionsToChoose.splice(remainingPublicPartitionsToChoose.indexOf(chosenValue), 1);
+  return chosenValue;
+}
 
 async function fetchPublic() {
-  const query = {
-    destination: 'p',
-    voice: 'n',
-    subject: 'capital',
-    type: 'transition'
-  };
-
-  const sentence = await pickOne(query);
-  playList.push(sentence);
+  const subject = chooseRandomPublicSubject();
+  const partition = chooseRandomPublicPartition();
+  for (const type of partition) {
+    if (type === TYPE_SILENCE) {
+      playList.push({_id:"silence"});
+    } else {
+      await fetchAndAddToPlayList('p', 'w', subject, type);
+    }
+  }
 }
 
 async function fetchInterior() {
-  const query = {
-    destination: 'i',
-    voice: 'n',
-    subject: 'djeune',
-    type: 'transition'
-  };
+  await fetchAndAddToPlayList('i', 'n','djeune', 'transition');
+}
 
+async function fetchAndAddToPlayList(destination, voice, subject, type) {
+  const query = {destination, voice, subject, type};
   const sentence = await pickOne(query);
   playList.push(sentence);
 }
@@ -247,10 +286,12 @@ function playSound(sentence) {
   $('#status').text(sentence.destination === 'p' ? 'PUBLIC VOICE' : 'INTERIOR VOICE');
   const sound = loadSound(sentence.clip, sentence.voice === 'w');
   sound.play();
+  $('#current').text(sentence._id);
   sound.on('end', () => {
     isPlaying = false;
     console.log("Finished playing sound ");
     console.log(sound);
+    $('#current').text("...");
     playNextSound();
     sound.unload();
   });
