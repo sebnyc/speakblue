@@ -383,6 +383,7 @@ app.post('/pick-one', async (req, res) => {
     let sentence = DEFAULT_SENTENCE;
     const history = req.body.history || [];
     const query = req.body.query || {voice: 'w'};
+    query[`clip${query.voice}`] = {'$ne': null}; // Make sure we don't retrieve a failed clip
     const sentences = await Database.find('sentence', query);
     if (sentences.length === 0) {
       console.log("Warning : no sentence found !!!");
@@ -392,7 +393,7 @@ app.post('/pick-one', async (req, res) => {
       if (typeof sentence[`clip${query.voice}`] === 'string') {
         sentence.clip = path.basename(sentence[`clip${query.voice}`]);
       } else {
-        console.log("Warning: sentence doesn't have clip");
+        console.log(`Warning: sentence ${sentence._id} doesn't have clip of type ${query.voice}`);
       }
     }
 

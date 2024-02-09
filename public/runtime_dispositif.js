@@ -188,7 +188,6 @@ function chooseRandomPublicSubject() {
   return chosenValue;
 }
 
-const PUBLIC_TYPES = ['lent', 'rapide', 'repetitif-lent', 'repetitif-rapide', 'begue', 'court', 'jesuis', 'mavoix'];
 const TYPE_LENT = 'lent';
 const TYPE_RAPIDE = 'rapide';
 const TYPE_REPETITIF_LENT = 'repetitif-lent';
@@ -203,7 +202,7 @@ const PUBLIC_PARTITIONS = [
   [TYPE_RAPIDE, TYPE_LENT, TYPE_REPETITIF_RAPIDE, TYPE_REPETITIF_LENT, TYPE_BEGUE, TYPE_COURT, TYPE_JE_SUIS, TYPE_MA_VOIX],
   [TYPE_RAPIDE, TYPE_REPETITIF_RAPIDE, TYPE_COURT, TYPE_JE_SUIS, TYPE_MA_VOIX],
   [TYPE_MA_VOIX, TYPE_REPETITIF_LENT, TYPE_BEGUE, TYPE_COURT, TYPE_JE_SUIS],
-  [TYPE_RAPIDE, TYPE_LENT, TYPE_REPETITIF_RAPIDE, TYPE_REPETITIF_LENT, TYPE_BEGUE, TYPE_COURT, TYPE_JE_SUIS, TYPE_MA_VOIX, TYPE_REPETITIF_RAPIDE, TYPE_REPETITIF_LENT],
+  [TYPE_RAPIDE, TYPE_SILENCE, TYPE_LENT, TYPE_REPETITIF_RAPIDE, TYPE_REPETITIF_LENT, TYPE_BEGUE, TYPE_COURT, TYPE_JE_SUIS, TYPE_MA_VOIX, TYPE_REPETITIF_RAPIDE, TYPE_REPETITIF_LENT],
 ]
 let remainingPublicPartitionsToChoose = [];
 
@@ -218,12 +217,13 @@ function chooseRandomPublicPartition() {
   return chosenValue;
 }
 
+const SILENCE_ID = 'silence';
 async function fetchPublic() {
   const subject = chooseRandomPublicSubject();
   const partition = chooseRandomPublicPartition();
   for (const type of partition) {
     if (type === TYPE_SILENCE) {
-      playList.push({_id:"silence"});
+      playList.push({_id:SILENCE_ID, destination:'p'});
     } else {
       await fetchAndAddToPlayList('p', 'w', subject, type);
     }
@@ -272,6 +272,7 @@ function playNextSound() {
   }
 }
 
+const SILENCE_LENGTHS = [15, 30];
 function playSound(sentence) {
   if (!sentence) {
     console.log("Warning : no sentence provided");
@@ -284,18 +285,30 @@ function playSound(sentence) {
   console.log(sentence)
 
   $('#status').text(sentence.destination === 'p' ? 'PUBLIC VOICE' : 'INTERIOR VOICE');
-  const sound = loadSound(sentence.clip, sentence.voice === 'w');
-  sound.play();
   $('#current').text(sentence._id);
-  sound.on('end', () => {
-    isPlaying = false;
-    console.log("Finished playing sound ");
-    console.log(sound);
-    $('#current').text("...");
-    playNextSound();
-    sound.unload();
-  });
   lastPlayedSound = new Date();
+
+  if (sentence._id === SILENCE_ID) {
+    setTimeout(onSilenceEnd, chance.pickone(SILENCE_LENGTHS) * 1000);
+  }
+  else {
+    const sound = loadSound(sentence.clip, sentence.voice === 'w');
+    sound.play();
+    sound.on('end', () => {
+      isPlaying = false;
+      console.log("Finished playing sound");
+      $('#current').text("...");
+      playNextSound();
+      sound.unload();
+    });
+  }
+}
+
+function onSilenceEnd() {
+  isPlaying = false;
+  console.log("Finished playing silence");
+  $('#current').text("...");
+  playNextSound();
 }
 
 function loadSound(filename, isWhisper) {
