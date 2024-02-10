@@ -29,7 +29,6 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
  * Get or set settings
  */
 app.post('/settings', async (req, res) => {
-  console.log("SETTINGS");
   try {
     if (req.body.newSettings) {
       const newSettings = {};
@@ -58,13 +57,130 @@ app.post('/settings', async (req, res) => {
   }
 });
 
+const DEFAULT_SENTENCE = {
+  _id: 'warning',
+  subject: 'defaultsubject',
+  type: 'defaulttype',
+  clip: "0a6f3168-b7fe-4da7-9d62-d3026017cfbe.wav"
+}
+
+app.post('/pick-one', async (req, res) => {
+  // console.log("PICKONE");
+  // console.log(req.body);
+  try {
+    let sentence = DEFAULT_SENTENCE;
+    const history = req.body.history || [];
+    const query = req.body.query || {voice: 'w'};
+    query[`clip${query.voice}`] = {'$ne': null}; // Make sure we don't retrieve a failed clip
+    const sentences = await Database.find('sentence', query);
+    if (sentences.length === 0) {
+      console.log(`Warning : no sentence found !!!`);
+      console.log(req.body);
+    } else {
+      sentence = chance.pickone(sentences);
+
+      if (typeof sentence[`clip${query.voice}`] === 'string') {
+        sentence.clip = path.basename(sentence[`clip${query.voice}`]);
+      } else {
+        console.log(`Warning: sentence ${sentence._id} doesn't have clip of type ${query.voice}`);
+      }
+    }
+
+    const response = {
+      _id: sentence._id,
+      destination: query.destination,
+      voice: query.voice,
+      subject: sentence.subject,
+      type: sentence.type,
+      clip: sentence.clip
+    }
+
+    res.status(200).send({
+      done: true,
+      sentence: response,
+    });
+
+  } catch (e) {
+    console.log(e);
+    res.status(500).send(e);
+  }
+});
+
+async function main() {
+  await httpServer.listen(process.env.HTTP_PORT);
+  const settings = await Database.findOne('settings', { _id: 'main' });
+
+  if (settings.useSensor === true) {
+    try {
+      const port = new SerialPort(
+        {
+          path: settings.arduinoPort,
+          baudRate: 115200,
+        },
+        (err) => {
+          if (err) {
+            console.log(err);
+            setTimeout(() => {
+              io.emit('no-sensor');
+            }, 1000);
+          }
+        },
+      );
+
+      port.on('readable', () => {
+        const data = port.read();
+        const str = data.toString();
+        if (/s+/.test(str) && /e/.test(str) === false) {
+          io.emit('motion-start');
+        } else if (/e+/.test(str) && /s/.test(str) === false) {
+          io.emit('motion-end');
+        }
+      });
+
+      port.on('error', (err) => {
+        console.log(err);
+        io.emit('no-sensor');
+      });
+    } catch (e) {}
+  }
+
+  setInterval(() => {
+    if (useExternalAudioDevice === true) {
+      try {
+        let found = false;
+        const outputDevices = audioDevices.getOutputDevices.sync();
+        const defaultDevice = audioDevices.getDefaultOutputDevice.sync();
+
+        for (let i = 0; i < outputDevices.length; i++) {
+          if (`${outputDevices[i].name}`.toLowerCase().indexOf(externalAudioDeviceName) !== -1) {
+            found = outputDevices[i].id;
+            break;
+          }
+        }
+
+        if (found === false) {
+          console.log('audio device not found');
+        } else if (defaultDevice.id !== found) {
+          console.log('force audio device');
+          audioDevices.setDefaultOutputDevice(found);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  }, 1000);
+}
+
+main();
+
+//////////////////////
+
 /**
  * Get all sentences starting with sb_ (minus the index number) in 2 lists :
  * - iparts for those starting with sb_i or including "respire"
  * - pparts for the others
  */
 app.post('/parts', async (req, res) => {
-  console.log("PARTS");
   try {
     const blocs = await Database.find('sentence', { _id: /^sb_/i });
     const iparts = [];
@@ -142,9 +258,9 @@ app.post('/pick', async (req, res) => {
       }
 
       if (
-        (req.body.random === 'true' || req.body.random === true) &&
-        Array.isArray(sentences) &&
-        sentences.length > 0
+          (req.body.random === 'true' || req.body.random === true) &&
+          Array.isArray(sentences) &&
+          sentences.length > 0
       ) {
         sentences = chance.pickset(sentences, quantity);
       }
@@ -219,9 +335,9 @@ app.post('/pick', async (req, res) => {
           if (finalSentence.clips.length > 0 || finalSentence.pause) {
             finalSentences.push(finalSentence);
           } else if (
-            thereIsOnlyTextAsPartition === null &&
-            typeof sentences[i].text === 'string' &&
-            /\w_\w+_\w,/i.test(sentences[i].text)
+              thereIsOnlyTextAsPartition === null &&
+              typeof sentences[i].text === 'string' &&
+              /\w_\w+_\w,/i.test(sentences[i].text)
           ) {
             thereIsOnlyTextAsPartition = sentences[i].text.trim().split(',');
           }
@@ -229,9 +345,9 @@ app.post('/pick', async (req, res) => {
       }
 
       if (
-        finalSentences.length === 0 &&
-        Array.isArray(thereIsOnlyTextAsPartition) &&
-        thereIsOnlyTextAsPartition.length > 0
+          finalSentences.length === 0 &&
+          Array.isArray(thereIsOnlyTextAsPartition) &&
+          thereIsOnlyTextAsPartition.length > 0
       ) {
         for (let t = 0; t < thereIsOnlyTextAsPartition.length; t++) {
           thereIsOnlyTextAsPartition[t] = thereIsOnlyTextAsPartition[t].replace(/^(\w)_/, '\\w?$1\\w?_');
@@ -369,120 +485,6 @@ app.post('/pick', async (req, res) => {
   }
 });
 
-const DEFAULT_SENTENCE = {
-  _id: 'test',
-  subject: 'defaultsubject',
-  type: 'defaulttype',
-  clip: "0a6f3168-b7fe-4da7-9d62-d3026017cfbe.wav"
-}
-
-app.post('/pick-one', async (req, res) => {
-  console.log("PICKONE");
-  console.log(req.body);
-  try {
-    let sentence = DEFAULT_SENTENCE;
-    const history = req.body.history || [];
-    const query = req.body.query || {voice: 'w'};
-    query[`clip${query.voice}`] = {'$ne': null}; // Make sure we don't retrieve a failed clip
-    const sentences = await Database.find('sentence', query);
-    if (sentences.length === 0) {
-      console.log("Warning : no sentence found !!!");
-    } else {
-      sentence = chance.pickone(sentences);
-
-      if (typeof sentence[`clip${query.voice}`] === 'string') {
-        sentence.clip = path.basename(sentence[`clip${query.voice}`]);
-      } else {
-        console.log(`Warning: sentence ${sentence._id} doesn't have clip of type ${query.voice}`);
-      }
-    }
-
-    const response = {
-      _id: sentence._id,
-      destination: query.destination,
-      voice: query.voice,
-      subject: sentence.subject,
-      type: sentence.type,
-      clip: sentence.clip
-    }
-
-    res.status(200).send({
-      done: true,
-      sentence: response,
-    });
-
-  } catch (e) {
-    console.log(e);
-    res.status(500).send(e);
-  }
-});
-
-async function main() {
-  await httpServer.listen(process.env.HTTP_PORT);
-  const settings = await Database.findOne('settings', { _id: 'main' });
-
-  if (settings.useSensor === true) {
-    try {
-      const port = new SerialPort(
-        {
-          path: settings.arduinoPort,
-          baudRate: 115200,
-        },
-        (err) => {
-          if (err) {
-            console.log(err);
-            setTimeout(() => {
-              io.emit('no-sensor');
-            }, 1000);
-          }
-        },
-      );
-
-      port.on('readable', () => {
-        const data = port.read();
-        const str = data.toString();
-        if (/s+/.test(str) && /e/.test(str) === false) {
-          io.emit('motion-start');
-        } else if (/e+/.test(str) && /s/.test(str) === false) {
-          io.emit('motion-end');
-        }
-      });
-
-      port.on('error', (err) => {
-        console.log(err);
-        io.emit('no-sensor');
-      });
-    } catch (e) {}
-  }
-
-  setInterval(() => {
-    if (useExternalAudioDevice === true) {
-      try {
-        let found = false;
-        const outputDevices = audioDevices.getOutputDevices.sync();
-        const defaultDevice = audioDevices.getDefaultOutputDevice.sync();
-
-        for (let i = 0; i < outputDevices.length; i++) {
-          if (`${outputDevices[i].name}`.toLowerCase().indexOf(externalAudioDeviceName) !== -1) {
-            found = outputDevices[i].id;
-            break;
-          }
-        }
-
-        if (found === false) {
-          console.log('audio device not found');
-        } else if (defaultDevice.id !== found) {
-          console.log('force audio device');
-          audioDevices.setDefaultOutputDevice(found);
-        }
-      } catch (e) {
-        console.log(e);
-      }
-    }
-  }, 1000);
-}
-
-main();
 
 // app.post('/blocs', async (req, res) => {
 //   try {

@@ -179,13 +179,12 @@ let remainingPublicSubjectsToChoose = [];
 
 function chooseRandomPublicSubject() {
   // Reload list if necessary
-  if (remainingPublicSubjectsToChoose.length === 0)
-  remainingPublicSubjectsToChoose = PUBLIC_SUBJECTS;
+  if (remainingPublicSubjectsToChoose.length === 0) {
+    remainingPublicSubjectsToChoose = [...PUBLIC_SUBJECTS];
+    remainingPublicSubjectsToChoose = chance.shuffle(remainingPublicSubjectsToChoose);
+  }
 
-  const chosenValue = chance.pickone(remainingPublicSubjectsToChoose);
-  // Remove chosenValue from array
-  remainingPublicSubjectsToChoose.splice(remainingPublicSubjectsToChoose.indexOf(chosenValue), 1);
-  return chosenValue;
+  return remainingPublicSubjectsToChoose.shift();
 }
 
 const TYPE_LENT = 'lent';
@@ -208,22 +207,23 @@ let remainingPublicPartitionsToChoose = [];
 
 function chooseRandomPublicPartition() {
   // Reload list if necessary
-  if (remainingPublicPartitionsToChoose.length === 0)
-    remainingPublicPartitionsToChoose = PUBLIC_PARTITIONS;
+  if (remainingPublicPartitionsToChoose.length === 0) {
+    remainingPublicPartitionsToChoose = [...PUBLIC_PARTITIONS];
+    remainingPublicPartitionsToChoose = chance.shuffle(remainingPublicPartitionsToChoose);
+  }
 
-  const chosenValue = chance.pickone(remainingPublicPartitionsToChoose);
-  // Remove chosenValue from array
-  remainingPublicPartitionsToChoose.splice(remainingPublicPartitionsToChoose.indexOf(chosenValue), 1);
-  return chosenValue;
+  return remainingPublicPartitionsToChoose.shift();
 }
 
 const SILENCE_ID = 'silence';
+const SILENCE_LENGTHS = [15, 30];
+
 async function fetchPublic() {
   const subject = chooseRandomPublicSubject();
   const partition = chooseRandomPublicPartition();
   for (const type of partition) {
     if (type === TYPE_SILENCE) {
-      playList.push({_id:SILENCE_ID, destination:'p'});
+      playList.push({_id:SILENCE_ID, destination:'p', duration: chance.pickone(SILENCE_LENGTHS)});
     } else {
       await fetchAndAddToPlayList('p', 'w', subject, type);
     }
@@ -272,7 +272,6 @@ function playNextSound() {
   }
 }
 
-const SILENCE_LENGTHS = [15, 30];
 function playSound(sentence) {
   if (!sentence) {
     console.log("Warning : no sentence provided");
@@ -289,7 +288,8 @@ function playSound(sentence) {
   lastPlayedSound = new Date();
 
   if (sentence._id === SILENCE_ID) {
-    setTimeout(onSilenceEnd, chance.pickone(SILENCE_LENGTHS) * 1000);
+    $('#current').text(sentence._id + ` ${sentence.duration}s`);
+    setTimeout(onSilenceEnd, sentence.duration * 1000);
   }
   else {
     const sound = loadSound(sentence.clip, sentence.voice === 'w');
