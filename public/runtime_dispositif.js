@@ -81,11 +81,11 @@ $(document).ready(() => {
           }
 
           socket = io();
-          $('#whisperVolume').val(settings.whisperVolume);
-          $('#whisperVolume').on('change', () => {
-            let newVal = parseFloat($('#whisperVolume').val());
+          $('#generalVolume').val(settings.whisperVolume);
+          $('#generalVolume').on('change', () => {
+            let newVal = parseFloat($('#generalVolume').val());
             if (isNaN(newVal)) {
-              $('#whisperVolume').val(settings.whisperVolume);
+              $('#generalVolume').val(settings.whisperVolume);
             } else {
               settings.whisperVolume = newVal;
               $.post('/settings', {
@@ -292,7 +292,7 @@ function playSound(sentence) {
     setTimeout(onSilenceEnd, sentence.duration * 1000);
   }
   else {
-    const sound = loadSound(sentence.clip, sentence.voice === 'w');
+    const sound = loadSound(sentence.clip);
     sound.play();
     sound.on('end', () => {
       isPlaying = false;
@@ -311,12 +311,11 @@ function onSilenceEnd() {
   playNextSound();
 }
 
-function loadSound(filename, isWhisper) {
-  // console.log('Load sound', filename, isWhisper);
+function loadSound(filename) {
   const sound = new Howl({
     src: [`/runtime/${filename}`],
     preload: true,
-    volume: isWhisper ? settings.whisperVolume : 1,
+    volume: settings.whisperVolume,
     autoplay: false,
     loop: false,
   });
