@@ -231,7 +231,7 @@ async function fetchPublic() {
 }
 
 async function fetchInterior() {
-  await fetchAndAddToPlayList('i', 'n','djeune', 'transition');
+  await fetchAndAddToPlayList('i', 'w','souffle', '');
 }
 
 async function fetchAndAddToPlayList(destination, voice, subject, type) {
