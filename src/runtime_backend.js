@@ -61,7 +61,7 @@ const DEFAULT_SENTENCE = {
   _id: 'warning',
   subject: 'defaultsubject',
   type: 'defaulttype',
-  clip: "0a6f3168-b7fe-4da7-9d62-d3026017cfbe.wav"
+  clip: "p_langue_court_1_w_5_w.mp3"
 }
 
 app.post('/pick-one', async (req, res) => {
