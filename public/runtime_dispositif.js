@@ -41,6 +41,16 @@ addEventListener('error', (e) => {
   }
 });
 
+function brownNoise() {
+  new Howl({
+    src: [`/brownNoise.mp3`],
+    preload: true,
+    autoplay: true,
+    loop: true,
+    volume: 0.01,
+  });
+}
+
 $(document).ready(() => {
   $('#status').text('INIT');
 
@@ -136,16 +146,6 @@ $(document).ready(() => {
 
 // Continuously plays an almost inaudible "brown noise" in order to prevent
 // the Bluetooth speaker to turn itself off automatically after a while:
-function brownNoise() {
-  new Howl({
-    src: [`/brownNoise.mp3`],
-    preload: true,
-    autoplay: true,
-    loop: true,
-    volume: 0.01,
-  });
-}
-
 function restart() {
   reset();
   producerInterval = setInterval(async () => {
