@@ -95,8 +95,11 @@ $(document).ready(() => {
           $('#generalVolume').on('change', () => {
             let newVal = parseFloat($('#generalVolume').val());
             if (isNaN(newVal)) {
+              console.log("Bad volume value, restoring previous one");
               $('#generalVolume').val(settings.whisperVolume);
             } else {
+              console.log(`Setting volume to value ${newVal}`);
+              $('#generalVolume').val(newVal);
               settings.whisperVolume = newVal;
               $.post('/settings', {
                 newSettings: settings,
