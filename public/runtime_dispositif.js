@@ -3,7 +3,7 @@ const settings = {};
 let nextDestination = 'p';
 let playList = [];
 let isPlaying = false;
-let history = [];
+let history = []; // Not used yet
 let lastPlayedSound = null;
 
 let producerInterval = null;
@@ -160,10 +160,20 @@ function restart() {
 }
 
 /**
+ * L'algorithme implémenté est de type "producteur-consommateur" à travers la liste playList
+ * - Le producteur s'assure que la playList est toujours remplie avec au moins 2 sons. Dès
+ * que la liste contient moins de 2 sons il en rajoute (et c'est là que se situe l'algorithme de choix
+ * voix interieure / voix publique, les partitions
+ * - Le consommateur se contente de lire la playList et de jouer les sons qui y figurent. Lorsqu'un son
+ * est joué il est retiré de la liste
+ */
+
+/**
  * Playlist producer
  */
 async function fetchNewSounds() {
   if (playList.length < 2) {
+    // On alterne entre "p" et "i"
     switch (nextDestination) {
       case 'p':
         await fetchPublic();
@@ -177,9 +187,12 @@ async function fetchNewSounds() {
 }
 
 const PUBLIC_SUBJECTS = ['identite', 'pythie', 'politique', 'ia', 'langue'];
-
 let remainingPublicSubjectsToChoose = [];
 
+/**
+ * Choix d'un sujet au hasard, avec la certitude que tous les sujets vont être choisis une fois
+ * puis on remet tous les sujets et on tire une nouvelle fois, et ainsi de suite
+ */
 function chooseRandomPublicSubject() {
   // Reload list if necessary
   if (remainingPublicSubjectsToChoose.length === 0) {
@@ -200,6 +213,9 @@ const TYPE_JE_SUIS = 'jesuis';
 const TYPE_MA_VOIX = 'mavoix';
 const TYPE_SILENCE = 'silence';
 
+/**
+ * Description des partitions
+ */
 const PUBLIC_PARTITIONS = [
   [TYPE_RAPIDE, TYPE_LENT, TYPE_REPETITIF_RAPIDE, TYPE_REPETITIF_LENT, TYPE_BEGUE, TYPE_COURT, TYPE_JE_SUIS, TYPE_MA_VOIX],
   [TYPE_RAPIDE, TYPE_REPETITIF_RAPIDE, TYPE_COURT, TYPE_JE_SUIS, TYPE_MA_VOIX],
@@ -230,6 +246,10 @@ const PUBLIC_PARTITIONS = [
 ]
 let remainingPublicPartitionsToChoose = [];
 
+/**
+ * Choix d'une partition au hasard, avec la certitude que toutes les partitions vont être choisies une fois
+ * puis on remet toutes les partitions et on tire une nouvelle fois, et ainsi de suite
+ */
 function chooseRandomPublicPartition() {
   // Reload list if necessary
   if (remainingPublicPartitionsToChoose.length === 0) {
@@ -241,6 +261,9 @@ function chooseRandomPublicPartition() {
 }
 
 const SILENCE_ID = 'silence';
+/**
+ * Durées des silences (en secondes) : choix au hasard parmi ces valeurs
+ */
 const SILENCE_LENGTHS = [15, 30];
 
 async function fetchPublic() {
@@ -285,7 +308,6 @@ async function pickOne(query) {
 /**
  * Playlist consumer
  */
-// Executed at intervals
 function playNextSound() {
   if (playList.length === 0) {
     console.log('Playlist currently empty, waiting...');
@@ -348,7 +370,6 @@ function loadSound(filename) {
 }
 
 /**
- *
  * Sensor management
  */
 function motionStart(fake) {

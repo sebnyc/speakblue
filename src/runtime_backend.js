@@ -64,6 +64,9 @@ const DEFAULT_SENTENCE = {
   clip: "p_langue_court_1_w_5_w.mp3"
 }
 
+/**
+ * Pick one sound based on request parameters
+ */
 app.post('/pick-one', async (req, res) => {
   // console.log("PICKONE");
   // console.log(req.body);
