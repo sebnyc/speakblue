@@ -27,7 +27,7 @@ async function launchPiece() {
 }
 
 function launchBackend() {
-  console.log('Start backend');
+  console.log('start backend');
   if (backend !== null) {
     backend.kill();
   }
