@@ -58,13 +58,11 @@ $(document).ready(() => {
   setInterval(() => {
     const now = new Date();
     if (lastPlayedSound !== null) {
-      $('#sincelast').text(
-          `Current sound since ${((now.getTime() - lastPlayedSound.getTime()) / 1000).toFixed(0)} s.`,
-      );
+      $('#sincelast').text(`Current sound since ${((now.getTime() - lastPlayedSound.getTime()) / 1000).toFixed(0)} s.`);
     } else {
       $('#sincelast').text('...');
     }
-    let playlistString = "";
+    let playlistString = '';
     for (const sentence of playList) {
       playlistString += `<li>${sentence._id}</li>`;
     }
@@ -73,78 +71,77 @@ $(document).ready(() => {
 
   // Fetch settings
   $.post('/settings')
-      .done(function (res) {
-        console.clear();
-        if (res.done && res.settings) {
-          for (let key in res.settings) {
-            settings[key] = res.settings[key];
-            if (typeof settings[key] === 'string') {
-              if (settings[key] === 'true' || settings[key] === 'false') {
-                settings[key] = settings[key] === 'true';
-              } else if (/^-?\d+\.\d+$/.test(settings[key])) {
-                settings[key] = parseFloat(settings[key]);
-              } else if (/^-?\d+$/.test(settings[key])) {
-                settings[key] = parseInt(settings[key]);
-              }
+    .done(function (res) {
+      console.clear();
+      if (res.done && res.settings) {
+        for (let key in res.settings) {
+          settings[key] = res.settings[key];
+          if (typeof settings[key] === 'string') {
+            if (settings[key] === 'true' || settings[key] === 'false') {
+              settings[key] = settings[key] === 'true';
+            } else if (/^-?\d+\.\d+$/.test(settings[key])) {
+              settings[key] = parseFloat(settings[key]);
+            } else if (/^-?\d+$/.test(settings[key])) {
+              settings[key] = parseInt(settings[key]);
             }
-            console.log(`Setting: ${key}: ${settings[key]}.`);
           }
-
-          socket = io();
-          $('#generalVolume').val(settings.whisperVolume);
-          $('#generalVolume').on('change', () => {
-            let newVal = parseFloat($('#generalVolume').val());
-            if (isNaN(newVal)) {
-              console.log("Bad volume value, restoring previous one");
-              $('#generalVolume').val(settings.whisperVolume);
-            } else {
-              console.log(`Setting volume to value ${newVal}`);
-              $('#generalVolume').val(newVal);
-              settings.whisperVolume = newVal;
-              $.post('/settings', {
-                newSettings: settings,
-              })
-                  .done(function () {})
-                  .fail(function (e) {
-                    console.error(e);
-                  });
-            }
-          });
-          $('#motion').on('click', () => {
-            motionStart(true);
-          });
-          socket.on('motion-start', () => {
-            $('#sensor').removeClass('btn-danger').addClass('btn-success');
-            $('#sensor').text('Sensor ON');
-            motionStart(false);
-          });
-          socket.on('motion-end', () => {
-            $('#sensor').removeClass('btn-danger').addClass('btn-success');
-            $('#sensor').text('Sensor ON');
-            motionEnd();
-          });
-          socket.on('no-sensor', () => {
-            $('#sensor').removeClass('btn-success').addClass('btn-danger');
-            $('#sensor').text('Sensor OFF');
-          });
-          setTimeout(() => {
-            $('#sensor-ignored').removeClass('btn-warning').addClass('btn-info').text('Sensor Active');
-            ignoreSensor = false;
-          }, settings.ignoreSensorDelay * 1000);
-          $('#status').text('WAITING');
-
-          // START
-          setTimeout(() => {
-            restart();
-          }, settings.startDelay * 1000);
-
-        } else {
-          console.error('NO SETTINGS');
+          console.log(`Setting: ${key}: ${settings[key]}.`);
         }
-      })
-      .fail(function (e) {
-        console.error(e);
-      });
+
+        socket = io();
+        $('#generalVolume').val(settings.whisperVolume);
+        $('#generalVolume').on('change', () => {
+          let newVal = parseFloat($('#generalVolume').val());
+          if (isNaN(newVal)) {
+            console.log('Bad volume value, restoring previous one');
+            $('#generalVolume').val(settings.whisperVolume);
+          } else {
+            console.log(`Setting volume to value ${newVal}`);
+            $('#generalVolume').val(newVal);
+            settings.whisperVolume = newVal;
+            $.post('/settings', {
+              newSettings: settings,
+            })
+              .done(function () {})
+              .fail(function (e) {
+                console.error(e);
+              });
+          }
+        });
+        $('#motion').on('click', () => {
+          motionStart(true);
+        });
+        socket.on('motion-start', () => {
+          $('#sensor').removeClass('btn-danger').addClass('btn-success');
+          $('#sensor').text('Sensor ON');
+          motionStart(false);
+        });
+        socket.on('motion-end', () => {
+          $('#sensor').removeClass('btn-danger').addClass('btn-success');
+          $('#sensor').text('Sensor ON');
+          motionEnd();
+        });
+        socket.on('no-sensor', () => {
+          $('#sensor').removeClass('btn-success').addClass('btn-danger');
+          $('#sensor').text('Sensor OFF');
+        });
+        setTimeout(() => {
+          $('#sensor-ignored').removeClass('btn-warning').addClass('btn-info').text('Sensor Active');
+          ignoreSensor = false;
+        }, settings.ignoreSensorDelay * 1000);
+        $('#status').text('WAITING');
+
+        // START
+        setTimeout(() => {
+          restart();
+        }, settings.startDelay * 1000);
+      } else {
+        console.error('NO SETTINGS');
+      }
+    })
+    .fail(function (e) {
+      console.error(e);
+    });
 });
 
 // Continuously plays an almost inaudible "brown noise" in order to prevent
@@ -217,33 +214,151 @@ const TYPE_SILENCE = 'silence';
  * Description des partitions
  */
 const PUBLIC_PARTITIONS = [
-  [TYPE_RAPIDE, TYPE_LENT, TYPE_REPETITIF_RAPIDE, TYPE_REPETITIF_LENT, TYPE_BEGUE, TYPE_COURT, TYPE_JE_SUIS, TYPE_MA_VOIX],
+  [
+    TYPE_RAPIDE,
+    TYPE_LENT,
+    TYPE_REPETITIF_RAPIDE,
+    TYPE_REPETITIF_LENT,
+    TYPE_BEGUE,
+    TYPE_COURT,
+    TYPE_JE_SUIS,
+    TYPE_MA_VOIX,
+  ],
   [TYPE_RAPIDE, TYPE_REPETITIF_RAPIDE, TYPE_COURT, TYPE_JE_SUIS, TYPE_MA_VOIX],
   [TYPE_MA_VOIX, TYPE_REPETITIF_LENT, TYPE_BEGUE, TYPE_COURT, TYPE_JE_SUIS],
-  [TYPE_RAPIDE, TYPE_LENT, TYPE_REPETITIF_RAPIDE, TYPE_REPETITIF_LENT, TYPE_BEGUE, TYPE_COURT, TYPE_JE_SUIS, TYPE_MA_VOIX, TYPE_REPETITIF_RAPIDE, TYPE_REPETITIF_LENT],
-  [TYPE_LENT, TYPE_COURT, TYPE_COURT, TYPE_JE_SUIS, TYPE_SILENCE, TYPE_BEGUE, TYPE_COURT, TYPE_LENT],
+  [
+    TYPE_RAPIDE,
+    TYPE_LENT,
+    TYPE_REPETITIF_RAPIDE,
+    TYPE_REPETITIF_LENT,
+    TYPE_BEGUE,
+    TYPE_COURT,
+    TYPE_JE_SUIS,
+    TYPE_MA_VOIX,
+    TYPE_REPETITIF_RAPIDE,
+    TYPE_REPETITIF_LENT,
+  ],
+  [TYPE_LENT, TYPE_COURT, TYPE_COURT, TYPE_JE_SUIS, TYPE_BEGUE, TYPE_COURT, TYPE_LENT],
   [TYPE_REPETITIF_RAPIDE, TYPE_MA_VOIX, TYPE_BEGUE, TYPE_COURT, TYPE_COURT],
-  [TYPE_REPETITIF_LENT, TYPE_JE_SUIS, TYPE_COURT, TYPE_COURT, TYPE_LENT, TYPE_MA_VOIX, TYPE_RAPIDE, TYPE_RAPIDE, TYPE_BEGUE, TYPE_LENT, TYPE_REPETITIF_RAPIDE, TYPE_JE_SUIS, TYPE_JE_SUIS, TYPE_RAPIDE],
-  [TYPE_COURT, TYPE_JE_SUIS, TYPE_MA_VOIX, TYPE_REPETITIF_RAPIDE, TYPE_BEGUE, TYPE_SILENCE, TYPE_COURT, TYPE_COURT, TYPE_RAPIDE, TYPE_SILENCE, TYPE_JE_SUIS, TYPE_REPETITIF_LENT, TYPE_MA_VOIX],
-  [TYPE_MA_VOIX, TYPE_LENT, TYPE_SILENCE, TYPE_BEGUE, TYPE_RAPIDE, TYPE_COURT, TYPE_RAPIDE],
+  [
+    TYPE_REPETITIF_LENT,
+    TYPE_JE_SUIS,
+    TYPE_COURT,
+    TYPE_COURT,
+    TYPE_LENT,
+    TYPE_MA_VOIX,
+    TYPE_RAPIDE,
+    TYPE_RAPIDE,
+    TYPE_BEGUE,
+    TYPE_LENT,
+    TYPE_REPETITIF_RAPIDE,
+    TYPE_JE_SUIS,
+    TYPE_JE_SUIS,
+    TYPE_RAPIDE,
+  ],
+  [
+    TYPE_COURT,
+    TYPE_JE_SUIS,
+    TYPE_MA_VOIX,
+    TYPE_REPETITIF_RAPIDE,
+    TYPE_BEGUE,
+    TYPE_COURT,
+    TYPE_COURT,
+    TYPE_RAPIDE,
+    TYPE_JE_SUIS,
+    TYPE_REPETITIF_LENT,
+    TYPE_MA_VOIX,
+  ],
+  [TYPE_MA_VOIX, TYPE_LENT, TYPE_BEGUE, TYPE_RAPIDE, TYPE_COURT, TYPE_RAPIDE],
   [TYPE_BEGUE, TYPE_REPETITIF_LENT, TYPE_LENT, TYPE_JE_SUIS],
-  [TYPE_REPETITIF_RAPIDE, TYPE_SILENCE, TYPE_REPETITIF_RAPIDE, TYPE_REPETITIF_LENT, TYPE_LENT, TYPE_SILENCE, TYPE_COURT, TYPE_COURT],
+  [TYPE_REPETITIF_RAPIDE, TYPE_REPETITIF_RAPIDE, TYPE_REPETITIF_LENT, TYPE_LENT, TYPE_COURT, TYPE_COURT],
   [TYPE_RAPIDE, TYPE_COURT, TYPE_RAPIDE, TYPE_COURT, TYPE_REPETITIF_RAPIDE, TYPE_COURT, TYPE_MA_VOIX],
   [TYPE_LENT, TYPE_REPETITIF_LENT, TYPE_JE_SUIS, TYPE_LENT],
   [TYPE_COURT, TYPE_LENT, TYPE_COURT, TYPE_JE_SUIS],
-  [TYPE_RAPIDE, TYPE_REPETITIF_RAPIDE, TYPE_SILENCE, TYPE_MA_VOIX, TYPE_MA_VOIX],
+  [TYPE_RAPIDE, TYPE_REPETITIF_RAPIDE, TYPE_MA_VOIX, TYPE_MA_VOIX],
   [TYPE_JE_SUIS, TYPE_BEGUE, TYPE_JE_SUIS, TYPE_LENT, TYPE_JE_SUIS, TYPE_RAPIDE, TYPE_JE_SUIS, TYPE_COURT],
-  [TYPE_MA_VOIX, TYPE_LENT, TYPE_MA_VOIX, TYPE_LENT, TYPE_MA_VOIX, TYPE_REPETITIF_LENT, TYPE_MA_VOIX, TYPE_RAPIDE, TYPE_MA_VOIX, TYPE_REPETITIF_RAPIDE, TYPE_MA_VOIX],
-  [TYPE_COURT, TYPE_COURT, TYPE_LENT, TYPE_COURT, TYPE_COURT, TYPE_RAPIDE, TYPE_COURT, TYPE_COURT, TYPE_SILENCE, TYPE_LENT, TYPE_REPETITIF_LENT],
-  [TYPE_REPETITIF_LENT, TYPE_JE_SUIS, TYPE_REPETITIF_LENT, TYPE_RAPIDE, TYPE_RAPIDE, TYPE_JE_SUIS, TYPE_LENT, TYPE_LENT],
+  [
+    TYPE_MA_VOIX,
+    TYPE_LENT,
+    TYPE_MA_VOIX,
+    TYPE_LENT,
+    TYPE_MA_VOIX,
+    TYPE_REPETITIF_LENT,
+    TYPE_MA_VOIX,
+    TYPE_RAPIDE,
+    TYPE_MA_VOIX,
+    TYPE_REPETITIF_RAPIDE,
+    TYPE_MA_VOIX,
+  ],
+  [
+    TYPE_COURT,
+    TYPE_COURT,
+    TYPE_LENT,
+    TYPE_COURT,
+    TYPE_COURT,
+    TYPE_RAPIDE,
+    TYPE_COURT,
+    TYPE_COURT,
+    TYPE_LENT,
+    TYPE_REPETITIF_LENT,
+  ],
+  [
+    TYPE_REPETITIF_LENT,
+    TYPE_JE_SUIS,
+    TYPE_REPETITIF_LENT,
+    TYPE_RAPIDE,
+    TYPE_RAPIDE,
+    TYPE_JE_SUIS,
+    TYPE_LENT,
+    TYPE_LENT,
+  ],
   [TYPE_MA_VOIX, TYPE_RAPIDE, TYPE_COURT, TYPE_REPETITIF_LENT, TYPE_MA_VOIX, TYPE_LENT, TYPE_JE_SUIS, TYPE_MA_VOIX],
-  [TYPE_MA_VOIX, TYPE_BEGUE, TYPE_LENT, TYPE_COURT, TYPE_COURT, TYPE_COURT, TYPE_SILENCE, TYPE_REPETITIF_LENT, TYPE_JE_SUIS],
+  [TYPE_MA_VOIX, TYPE_BEGUE, TYPE_LENT, TYPE_COURT, TYPE_COURT, TYPE_COURT, TYPE_REPETITIF_LENT, TYPE_JE_SUIS],
   [TYPE_JE_SUIS, TYPE_LENT, TYPE_REPETITIF_LENT, TYPE_RAPIDE],
   [TYPE_RAPIDE, TYPE_REPETITIF_LENT, TYPE_REPETITIF_RAPIDE, TYPE_JE_SUIS, TYPE_JE_SUIS],
   [TYPE_COURT, TYPE_COURT, TYPE_JE_SUIS, TYPE_COURT, TYPE_JE_SUIS],
-  [TYPE_LENT, TYPE_REPETITIF_LENT, TYPE_JE_SUIS, TYPE_JE_SUIS, TYPE_SILENCE, TYPE_RAPIDE, TYPE_REPETITIF_RAPIDE, TYPE_MA_VOIX, TYPE_MA_VOIX, TYPE_LENT, TYPE_BEGUE, TYPE_REPETITIF_RAPIDE, TYPE_COURT, TYPE_COURT, TYPE_MA_VOIX],
-  [TYPE_MA_VOIX, TYPE_RAPIDE, TYPE_REPETITIF_LENT, TYPE_REPETITIF_RAPIDE, TYPE_JE_SUIS, TYPE_LENT, TYPE_COURT, TYPE_COURT, TYPE_COURT, TYPE_SILENCE, TYPE_LENT, TYPE_MA_VOIX, TYPE_LENT, TYPE_RAPIDE, TYPE_JE_SUIS, TYPE_BEGUE, TYPE_JE_SUIS, TYPE_LENT, TYPE_COURT, TYPE_COURT, TYPE_COURT, TYPE_SILENCE, TYPE_MA_VOIX, TYPE_LENT, TYPE_REPETITIF_RAPIDE],
-]
+  [
+    TYPE_LENT,
+    TYPE_REPETITIF_LENT,
+    TYPE_JE_SUIS,
+    TYPE_JE_SUIS,
+    TYPE_RAPIDE,
+    TYPE_REPETITIF_RAPIDE,
+    TYPE_MA_VOIX,
+    TYPE_MA_VOIX,
+    TYPE_LENT,
+    TYPE_BEGUE,
+    TYPE_REPETITIF_RAPIDE,
+    TYPE_COURT,
+    TYPE_COURT,
+    TYPE_MA_VOIX,
+  ],
+  [
+    TYPE_MA_VOIX,
+    TYPE_RAPIDE,
+    TYPE_REPETITIF_LENT,
+    TYPE_REPETITIF_RAPIDE,
+    TYPE_JE_SUIS,
+    TYPE_LENT,
+    TYPE_COURT,
+    TYPE_COURT,
+    TYPE_COURT,
+    TYPE_LENT,
+    TYPE_MA_VOIX,
+    TYPE_LENT,
+    TYPE_RAPIDE,
+    TYPE_JE_SUIS,
+    TYPE_BEGUE,
+    TYPE_JE_SUIS,
+    TYPE_LENT,
+    TYPE_COURT,
+    TYPE_COURT,
+    TYPE_COURT,
+    TYPE_MA_VOIX,
+    TYPE_LENT,
+    TYPE_REPETITIF_RAPIDE,
+  ],
+];
 let remainingPublicPartitionsToChoose = [];
 
 /**
@@ -271,7 +386,7 @@ async function fetchPublic() {
   const partition = chooseRandomPublicPartition();
   for (const type of partition) {
     if (type === TYPE_SILENCE) {
-      playList.push({_id:SILENCE_ID, destination:'p', duration: chance.pickone(SILENCE_LENGTHS)});
+      playList.push({ _id: SILENCE_ID, destination: 'p', duration: chance.pickone(SILENCE_LENGTHS) });
     } else {
       await fetchAndAddToPlayList('p', 'w', subject, type);
     }
@@ -279,11 +394,11 @@ async function fetchPublic() {
 }
 
 async function fetchInterior() {
-  await fetchAndAddToPlayList('i', 'w','souffle', '');
+  await fetchAndAddToPlayList('i', 'w', 'souffle', '');
 }
 
 async function fetchAndAddToPlayList(destination, voice, subject, type) {
-  const query = {destination, voice, subject, type};
+  const query = { destination, voice, subject, type };
   const sentence = await pickOne(query);
   playList.push(sentence);
 }
@@ -292,10 +407,9 @@ async function pickOne(query) {
   console.log('PickOne', JSON.stringify(query));
   try {
     const res = await $.post('/pick-one', { query: query, history: history }).promise();
-    if (res.done && res.sentence)
-      return res.sentence;
+    if (res.done && res.sentence) return res.sentence;
     else {
-      console.log("Unexpected response");
+      console.log('Unexpected response');
       console.log(res);
       return null;
     }
@@ -321,14 +435,13 @@ function playNextSound() {
 
 function playSound(sentence) {
   if (!sentence) {
-    console.log("Warning : no sentence provided");
+    console.log('Warning : no sentence provided');
     return;
   }
-  if (isPlaying)
-    return; // Already playing another sound
+  if (isPlaying) return; // Already playing another sound
   isPlaying = true;
-  console.log("Playing")
-  console.log(sentence)
+  console.log('Playing');
+  console.log(sentence);
 
   $('#status').text(sentence.destination === 'p' ? 'PUBLIC VOICE' : 'INTERIOR VOICE');
   $('#current').text(sentence._id);
@@ -337,14 +450,13 @@ function playSound(sentence) {
   if (sentence._id === SILENCE_ID) {
     $('#current').text(sentence._id + ` ${sentence.duration}s`);
     setTimeout(onSilenceEnd, sentence.duration * 1000);
-  }
-  else {
+  } else {
     const sound = loadSound(sentence.clip);
     sound.play();
     sound.on('end', () => {
       isPlaying = false;
-      console.log("Finished playing sound");
-      $('#current').text("...");
+      console.log('Finished playing sound');
+      $('#current').text('...');
       playNextSound();
       sound.unload();
     });
@@ -353,8 +465,8 @@ function playSound(sentence) {
 
 function onSilenceEnd() {
   isPlaying = false;
-  console.log("Finished playing silence");
-  $('#current').text("...");
+  console.log('Finished playing silence');
+  $('#current').text('...');
   playNextSound();
 }
 
