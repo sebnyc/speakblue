@@ -188,7 +188,7 @@ let remainingPublicSubjectsToChoose = [];
 
 /**
  * Choix d'un sujet au hasard, avec la certitude que tous les sujets vont être choisis une fois
- * puis on remet tous les sujets et on tire une nouvelle fois, et ainsi de suite
+ * puis on remet tous les sujets et on tire une nouvelle fois, et ainsi de suite Test
  */
 function chooseRandomPublicSubject() {
   // Reload list if necessary
